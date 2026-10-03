@@ -1,105 +1,241 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TAIWAN ELECTION MAP</title>
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <style>
-:root{--bg:#070b12;--panel:#0d131d;--panel2:#111a26;--line:#263242;--text:#e7edf5;--muted:#8190a4}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,"Noto Sans TC",system-ui,sans-serif;overflow:hidden}.app{height:100vh;display:grid;grid-template-columns:280px 1fr 330px}.side,.right{background:var(--panel);padding:22px}.side{border-right:1px solid var(--line)}.right{border-left:1px solid var(--line)}h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);font-size:12px;margin-bottom:25px}.label{font-size:11px;color:var(--muted);margin:18px 0 7px}.select{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px}.map{position:relative;min-width:0}.mapbar{position:absolute;z-index:3;left:20px;top:18px;background:#0d131dcc;border:1px solid var(--line);border-radius:9px;padding:8px 12px;color:var(--muted);font-size:12px}.map svg{width:100%;height:100%;display:block}.town{fill:#121b27;stroke:#344152;stroke-width:.45;cursor:pointer}.town:hover{fill:#1b2a3a}.town.selected{fill:#67d5ff;fill-opacity:.8;stroke:#d9f8ff;stroke-width:1.1}.town.county-selected{fill:#173041}.town-border{fill:none;stroke:#536174;stroke-width:.7;pointer-events:none}.county-border{fill:none;stroke:#8c99aa;stroke-width:1.05;pointer-events:none}.nation-border{fill:none;stroke:#c5d0dc;stroke-width:1.25;pointer-events:none}.zoom-controls{position:absolute;right:18px;bottom:18px;display:flex;gap:6px}.zoom-controls button{width:34px;height:34px;background:#0d131d;border:1px solid var(--line);color:var(--text);border-radius:7px}.title{font-size:12px;color:var(--muted);margin-bottom:5px}.place{font-size:25px;font-weight:650;margin-bottom:18px}.metric{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:11px 0;font-size:13px}.metric span:last-child{font-variant-numeric:tabular-nums}.hint{margin-top:20px;color:var(--muted);font-size:12px;line-height:1.7}
-</style></head>
-<body><div class="app">
-<aside class="side"><h1>TAIWAN ELECTION MAP</h1><div class="sub">臺灣歷年選舉地圖資料平台</div>
-<div class="label">選舉類型</div><select class="select" id="electionType"><option value="president">總統副總統</option><option value="mayor">縣市長</option><option value="legislator">立法委員</option><option value="local">鄉鎮市區長</option></select>
-<div class="label">年份</div><select class="select" id="year"><option value="2024">2024</option></select>
-<div class="label">縣市</div><select class="select" id="county"><option value="">選擇縣市…</option></select>
-<div class="label">鄉鎮市區</div><select class="select" id="town"><option value="">選擇鄉鎮市區…</option></select>
-<div class="hint">地圖先以行政區界線與選區互動為核心；選舉結果資料將由獨立資料層載入，方便後續擴充歷年選舉。</div></aside>
-<main class="map"><div class="mapbar" id="status">地圖資料載入中…</div><svg id="svg"></svg><div class="zoom-controls"><button id="reset">↺</button><button id="zin">＋</button><button id="zout">－</button></div></main>
-<aside class="right"><div class="title">目前選取</div><div class="place" id="place">全臺</div><div class="metric"><span>選舉</span><span id="metricElection">總統副總統</span></div><div class="metric"><span>年份</span><span id="metricYear">2024</span></div><div class="metric"><span>投票率</span><span id="turnout">—</span></div><div class="metric"><span>得票資料</span><span id="votes">待載入</span></div></aside>
-</div>
-<script>
-const $=id=>document.getElementById(id),svg=d3.select('#svg');
-let g,zoom,towns=[],projection,path,selectedCode=null;
-const DATA_URL='https://cdn.jsdelivr.net/npm/taiwan-atlas@2021.9.20/towns-10t.json';
+:root{--bg:#070b12;--panel:#0d131d;--panel2:#111a26;--line:#263242;--text:#e7edf5;--muted:#8190a4;--cyan:#67d5ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,"Noto Sans TC",system-ui,sans-serif;overflow:hidden}
+.app{height:100vh;display:grid;grid-template-columns:280px 1fr 370px}
+.side,.right{background:var(--panel);padding:22px}
+.side{border-right:1px solid var(--line);overflow:auto}
+.right{border-left:1px solid var(--line);overflow:auto}
+h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);font-size:12px;margin-bottom:25px}
+.label{font-size:11px;color:var(--muted);margin:18px 0 7px}
+.select{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px}
+.map{position:relative;min-width:0}.mapbar{position:absolute;z-index:3;left:20px;top:18px;background:#0d131dcc;border:1px solid var(--line);border-radius:9px;padding:8px 12px;color:var(--muted);font-size:12px}
+.map svg{width:100%;height:100%;display:block}
+.town{fill:#121b27;stroke:#344152;stroke-width:.42;cursor:pointer;transition:fill .15s}
+.town:hover{fill:#24364a}
+.town.selected{stroke:#fff;stroke-width:1.35;fill-opacity:.95}
+.town.county-selected{fill-opacity:.9}
+.town.result-enabled{stroke:#344152}
+.town-border{fill:none;stroke:#536174;stroke-width:.58;pointer-events:none}
+.county-border{fill:none;stroke:#7e8a9b;stroke-width:.85;pointer-events:none}
+.nation-border{fill:none;stroke:#c5d0dc;stroke-width:1.05;pointer-events:none}
+.zoom-controls{position:absolute;right:18px;bottom:18px;display:flex;gap:6px}
+.zoom-controls button{width:34px;height:34px;background:#0d131d;border:1px solid var(--line);color:var(--text);border-radius:7px}
+.title{font-size:11px;color:var(--muted);margin-bottom:5px}.place{font-size:25px;font-weight:650;margin-bottom:18px}
+.metric{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:10px 0;font-size:13px}
+.metric span:last-child{font-variant-numeric:tabular-nums}
+.section-title{font-size:12px;color:var(--muted);margin:22px 0 10px}
+.candidate{padding:11px 0;border-bottom:1px solid var(--line)}
+.candidate-head{display:flex;justify-content:space-between;gap:10px;font-size:13px}
+.candidate-name{font-weight:600}.candidate-party{color:var(--muted);font-size:11px;margin-top:3px}
+.candidate-value{font-variant-numeric:tabular-nums;font-weight:600}
+.bar-track{height:7px;background:#182230;border-radius:99px;overflow:hidden;margin-top:8px}
+.bar-fill{height:100%;border-radius:99px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;color:var(--muted);font-size:11px}
+.legend-item{display:flex;align-items:center;gap:5px}.dot{width:8px;height:8px;border-radius:50%}
+.source{margin-top:20px;color:var(--muted);font-size:10px;line-height:1.6}
+.hint{margin-top:20px;color:var(--muted);font-size:12px;line-height:1.7}
+.badge{display:inline-block;padding:3px 7px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:10px;margin-bottom:12px}
+.empty{color:var(--muted);font-size:12px;line-height:1.7;padding:12px 0}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="side">
+  <h1>TAIWAN ELECTION MAP</h1>
+  <div class="sub">臺灣歷年選舉地圖資料平台</div>
 
-function orderNorthSouth(a,b){return path.centroid(a)[1]-path.centroid(b)[1]}
+  <div class="label">選舉類型</div>
+  <select class="select" id="electionType">
+    <option value="president">總統副總統</option>
+    <option value="mayor">縣市長</option>
+    <option value="legislator">立法委員</option>
+    <option value="local">鄉鎮市區長</option>
+  </select>
+
+  <div class="label">年份</div>
+  <select class="select" id="year">
+    <option value="2024">2024</option>
+  </select>
+
+  <div class="label">縣市</div>
+  <select class="select" id="county"><option value="">選擇縣市…</option></select>
+
+  <div class="label">鄉鎮市區</div>
+  <select class="select" id="town"><option value="">選擇鄉鎮市區…</option></select>
+
+  <div class="hint">目前已接入 2024 年總統副總統選舉鄉鎮市區層級票數。選取縣市或鄉鎮市區後，右側會同步顯示候選人得票數與得票率。</div>
+</aside>
+
+<main class="map">
+  <div class="mapbar" id="status">地圖資料載入中…</div>
+  <svg id="svg"></svg>
+  <div class="zoom-controls"><button id="reset">↺</button><button id="zin">＋</button><button id="zout">－</button></div>
+</main>
+
+<aside class="right">
+  <div class="title">目前選取</div>
+  <div class="place" id="place">全臺</div>
+  <div class="badge" id="dataBadge">2024 總統副總統</div>
+
+  <div class="metric"><span>選舉</span><span id="metricElection">總統副總統</span></div>
+  <div class="metric"><span>年份</span><span id="metricYear">2024</span></div>
+  <div class="metric"><span>有效票</span><span id="validVotes">—</span></div>
+  <div class="metric"><span>投票率</span><span id="turnout">待接入</span></div>
+
+  <div class="section-title">候選人得票比例</div>
+  <div id="candidates"></div>
+
+  <div class="section-title">政黨色彩圖例</div>
+  <div class="legend">
+    <div class="legend-item"><span class="dot" style="background:#1b9e3f"></span>民主進步黨</div>
+    <div class="legend-item"><span class="dot" style="background:#2f6fd6"></span>中國國民黨</div>
+    <div class="legend-item"><span class="dot" style="background:#19a7ce"></span>台灣民眾黨</div>
+  </div>
+
+  <div class="source">資料來源：中央選舉委員會公開選舉資料。資料處理將村里層級票數彙整至鄉鎮市區，以供本平台地圖展示。</div>
+</aside>
+</div>
+
+<script>
+const $=id=>document.getElementById(id),svg=d3.select("#svg");
+let g,zoom,towns=[],projection,path,selectedCode=null,electionData=null;
+
+const MAP_URL="https://cdn.jsdelivr.net/npm/taiwan-atlas@2021.9.20/towns-10t.json";
+const DATA_URL="data/2024_presidential_town.json";
+
+const PARTY_COLOR={
+  "民主進步黨":"#1b9e3f",
+  "中國國民黨":"#2f6fd6",
+  "台灣民眾黨":"#19a7ce"
+};
+
+function fmt(n){return Number(n||0).toLocaleString("zh-TW")}
+function partyColor(p){return PARTY_COLOR[p]||"#738196"}
 
 function setup(topo){
-  const townFeatures=topojson.feature(topo,topo.objects.towns).features;
-  towns=townFeatures;
-  g=svg.append('g');
+  towns=topojson.feature(topo,topo.objects.towns).features;
+  g=svg.append("g");
   projection=d3.geoMercator();
+  projection.fitExtent([[24,18],[svg.node().clientWidth-24,svg.node().clientHeight-18]],{type:"FeatureCollection",features:towns});
   path=d3.geoPath(projection);
-  path.projection().fitExtent([[24,18],[svg.node().clientWidth-24,svg.node().clientHeight-18]],{type:'FeatureCollection',features:towns});
 
-  g.selectAll('.town').data(towns).join('path')
-    .attr('class','town').attr('d',path)
-    .attr('data-code',d=>d.properties.TOWNCODE)
-    .on('click',(e,d)=>selectTown(d));
+  g.selectAll(".town").data(towns).join("path")
+    .attr("class","town")
+    .attr("d",path)
+    .attr("data-code",d=>d.properties.TOWNCODE)
+    .on("click",(e,d)=>selectTown(d));
 
-  const townMesh=topojson.mesh(topo,topo.objects.towns);
-  g.append('path').datum(townMesh).attr('class','town-border').attr('d',path);
+  g.append("path").datum(topojson.mesh(topo,topo.objects.towns))
+    .attr("class","town-border").attr("d",path);
 
-  const countyMesh=topojson.mesh(topo,topo.objects.towns,(a,b)=>a.properties.COUNTYCODE!==b.properties.COUNTYCODE);
-  g.append('path').datum(countyMesh).attr('class','county-border').attr('d',path);
+  g.append("path").datum(topojson.mesh(topo,topo.objects.towns,(a,b)=>a.properties.COUNTYCODE!==b.properties.COUNTYCODE))
+    .attr("class","county-border").attr("d",path);
 
-  const nation=topojson.feature(topo,topo.objects.nation);
-  g.append('path').datum(nation).attr('class','nation-border').attr('d',path);
+  g.append("path").datum(topojson.feature(topo,topo.objects.nation))
+    .attr("class","nation-border").attr("d",path);
 
-  zoom=d3.zoom().scaleExtent([1,8]).on('zoom',e=>g.attr('transform',e.transform));
+  zoom=d3.zoom().scaleExtent([1,8]).on("zoom",e=>g.attr("transform",e.transform));
   svg.call(zoom);
-  $('reset').onclick=()=>svg.transition().call(zoom.transform,d3.zoomIdentity);
-  $('zin').onclick=()=>svg.transition().call(zoom.scaleBy,1.35);
-  $('zout').onclick=()=>svg.transition().call(zoom.scaleBy,.74);
-  populate();
-  $('status').textContent='行政區地圖';
+  $("reset").onclick=()=>svg.transition().call(zoom.transform,d3.zoomIdentity);
+  $("zin").onclick=()=>svg.transition().call(zoom.scaleBy,1.35);
+  $("zout").onclick=()=>svg.transition().call(zoom.scaleBy,.74);
+
+  populateMenus();
+  applyElectionColors();
+  updatePanel("全臺",null);
+  $("status").textContent="行政區地圖｜2024 總統結果";
 }
 
-function populate(){
+function populateMenus(){
   const groups=d3.groups(towns,d=>d.properties.COUNTYCODE)
     .map(([code,fs])=>({code,name:fs[0].properties.COUNTYNAME,features:fs}))
     .sort((a,b)=>d3.mean(a.features,d=>path.centroid(d)[1])-d3.mean(b.features,d=>path.centroid(d)[1]));
-  $('county').innerHTML='<option value="">選擇縣市…</option>'+
-    groups.map(x=>'<option value="'+x.code+'">'+x.name+'</option>').join('');
-  updateTownMenu('');
+
+  $("county").innerHTML='<option value="">選擇縣市…</option>'+
+    groups.map(x=>'<option value="'+x.code+'">'+x.name+"</option>").join("");
+  updateTownMenu("");
 }
 
 function updateTownMenu(code){
-  const fs=towns.filter(d=>d.properties.COUNTYCODE===code).sort(orderNorthSouth);
-  $('town').innerHTML='<option value="">選擇鄉鎮市區…</option>'+
-    fs.map(d=>'<option value="'+d.properties.TOWNCODE+'">'+d.properties.TOWNNAME+'</option>').join('');
+  const fs=towns.filter(d=>d.properties.COUNTYCODE===code)
+    .sort((a,b)=>path.centroid(a)[1]-path.centroid(b)[1]);
+  $("town").innerHTML='<option value="">選擇鄉鎮市區…</option>'+
+    fs.map(d=>'<option value="'+d.properties.TOWNCODE+'">'+d.properties.TOWNNAME+"</option>").join("");
 }
 
 function clearSelection(){
-  svg.selectAll('.town').classed('selected',false).classed('county-selected',false);
+  svg.selectAll(".town").classed("selected",false).classed("county-selected",false);
   selectedCode=null;
 }
 
-function selectCountyByCode(code){
-  clearSelection();
-  if(!code){updateTownMenu('');updatePanel('全臺');return}
-  const fs=towns.filter(d=>d.properties.COUNTYCODE===code);
-  svg.selectAll('.town').filter(d=>d.properties.COUNTYCODE===code).classed('county-selected',true);
-  updateTownMenu(code);
-  zoomTo(fs);
-  updatePanel(fs[0]?.properties.COUNTYNAME||'縣市');
+function aggregate(features){
+  const rows={};
+  for(const f of features){
+    const d=electionData?.towns?.[f.properties.TOWNCODE];
+    if(!d)continue;
+    for(const c of d.candidates){
+      const key=c.name;
+      if(!rows[key])rows[key]={name:c.name,party:c.party,votes:0};
+      rows[key].votes+=c.votes;
+    }
+  }
+  const total=Object.values(rows).reduce((s,x)=>s+x.votes,0);
+  const candidates=Object.values(rows).sort((a,b)=>b.votes-a.votes)
+    .map(x=>({...x,share:total?x.votes/total*100:0}));
+  return {totalVotes:total,candidates};
 }
 
-function selectTown(d){
-  clearSelection();
-  selectedCode=d.properties.TOWNCODE;
-  svg.selectAll('.town').filter(x=>x.properties.TOWNCODE===selectedCode).classed('selected',true);
-  $('county').value=d.properties.COUNTYCODE;
-  updateTownMenu(d.properties.COUNTYCODE);
-  $('town').value=selectedCode;
-  zoomTo([d]);
-  updatePanel(d.properties.COUNTYNAME+'・'+d.properties.TOWNNAME);
+function applyElectionColors(){
+  if(!electionData)return;
+  svg.selectAll(".town").each(function(d){
+    const row=electionData.towns[d.properties.TOWNCODE];
+    const leader=row?.candidates?.[0];
+    d3.select(this)
+      .classed("result-enabled",!!row)
+      .style("fill",leader?partyColor(leader.party):null)
+      .style("fill-opacity",leader?(.24+Math.min(leader.share/100,.76)):.0);
+  });
+}
+
+function renderCandidates(data){
+  const box=$("candidates");
+  if(!data?.candidates?.length){
+    box.innerHTML='<div class="empty">目前選取範圍沒有可用的選舉票數資料。</div>';
+    return;
+  }
+  const max=Math.max(...data.candidates.map(x=>x.share),1);
+  box.innerHTML=data.candidates.map(x=>{
+    const color=partyColor(x.party);
+    return '<div class="candidate">'+
+      '<div class="candidate-head"><div><div class="candidate-name">'+x.name+'</div><div class="candidate-party">'+x.party+'</div></div>'+
+      '<div class="candidate-value">'+fmt(x.votes)+'　'+x.share.toFixed(2)+'%</div></div>'+
+      '<div class="bar-track"><div class="bar-fill" style="width:'+(x.share/max*100)+'%;background:'+color+'"></div></div>'+
+      '</div>';
+  }).join("");
+}
+
+function updatePanel(name,data){
+  $("place").textContent=name;
+  $("metricElection").textContent=$("electionType").selectedOptions[0].textContent;
+  $("metricYear").textContent=$("year").value;
+  $("validVotes").textContent=data?fmt(data.totalVotes):"—";
+  $("dataBadge").textContent=$("year").value+" "+$("electionType").selectedOptions[0].textContent;
+  renderCandidates(data||electionData?.national);
+  $("status").textContent=name+"｜"+$("year").value+" "+$("electionType").selectedOptions[0].textContent;
 }
 
 function zoomTo(fs){
-  const b=path.bounds({type:'FeatureCollection',features:fs});
+  if(!fs.length)return;
+  const b=path.bounds({type:"FeatureCollection",features:fs});
   const w=b[1][0]-b[0][0],h=b[1][1]-b[0][1];
   const cx=(b[0][0]+b[1][0])/2,cy=(b[0][1]+b[1][1])/2;
   const s=Math.max(1,Math.min(7,.72/Math.max(w/svg.node().clientWidth,h/svg.node().clientHeight)));
@@ -107,28 +243,60 @@ function zoomTo(fs){
   svg.transition().duration(450).call(zoom.transform,t);
 }
 
-function updatePanel(name){
-  $('place').textContent=name;
-  $('metricElection').textContent=$('electionType').selectedOptions[0].textContent;
-  $('metricYear').textContent=$('year').value;
-  $('status').textContent=name+'｜行政區地圖';
+function selectCountyByCode(code){
+  clearSelection();
+  if(!code){
+    updateTownMenu("");
+    zoomTo(towns);
+    updatePanel("全臺",electionData?.national);
+    return;
+  }
+  const fs=towns.filter(d=>d.properties.COUNTYCODE===code);
+  svg.selectAll(".town").filter(d=>d.properties.COUNTYCODE===code).classed("county-selected",true);
+  $("town").value="";
+  updateTownMenu(code);
+  zoomTo(fs);
+  updatePanel(fs[0]?.properties.COUNTYNAME||"縣市",aggregate(fs));
 }
 
-$('county').onchange=e=>selectCountyByCode(e.target.value);
-$('town').onchange=e=>{
+function selectTown(d){
+  clearSelection();
+  selectedCode=d.properties.TOWNCODE;
+  svg.selectAll(".town").filter(x=>x.properties.TOWNCODE===selectedCode).classed("selected",true);
+  $("county").value=d.properties.COUNTYCODE;
+  updateTownMenu(d.properties.COUNTYCODE);
+  $("town").value=selectedCode;
+  zoomTo([d]);
+  updatePanel(d.properties.COUNTYNAME+"・"+d.properties.TOWNNAME,electionData?.towns?.[selectedCode]);
+}
+
+$("county").onchange=e=>selectCountyByCode(e.target.value);
+$("town").onchange=e=>{
   const d=towns.find(x=>x.properties.TOWNCODE===e.target.value);
   if(d)selectTown(d);
 };
-$('electionType').onchange=()=>updatePanel($('place').textContent);
-$('year').onchange=()=>updatePanel($('place').textContent);
+$("electionType").onchange=()=>{
+  const ok=$("electionType").value==="president";
+  if(!ok){
+    updatePanel($("place").textContent,null);
+    $("status").textContent="此選舉類型資料建置中";
+    return;
+  }
+  updatePanel($("place").textContent,electionData?.national);
+};
+$("year").onchange=()=>updatePanel($("place").textContent,electionData?.national);
+window.addEventListener("resize",()=>location.reload());
 
-window.addEventListener('resize',()=>location.reload());
-
-fetch(DATA_URL)
-  .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
-  .then(setup)
-  .catch(err=>{
-    console.error('Taiwan map load error:',err);
-    $('status').textContent='地圖資料載入失敗：'+(err?.message||err);
-  });
-</script></body></html>
+Promise.all([
+  fetch(MAP_URL).then(r=>{if(!r.ok)throw new Error("地圖 HTTP "+r.status);return r.json()}),
+  fetch(DATA_URL).then(r=>{if(!r.ok)throw new Error("選舉資料 HTTP "+r.status);return r.json()})
+]).then(([topo,data])=>{
+  electionData=data;
+  setup(topo);
+}).catch(err=>{
+  console.error("Taiwan election map error:",err);
+  $("status").textContent="載入失敗："+(err?.message||err);
+});
+</script>
+</body>
+</html>
