@@ -5,6 +5,7 @@ from collections import defaultdict
 
 SRC = Path("/tmp/cec/data/elections/2020-2024")
 SRC_2018 = Path("/tmp/cec/data/2018/縣市長.csv")
+SRC_2022 = Path("/tmp/cec/data/2022/縣市長.csv")
 OUT = Path("data/elections.json")
 OUT.parent.mkdir(parents=True, exist_ok=True)
 
@@ -137,14 +138,14 @@ def aggregate_partylist():
     ]
     return {"national": {"totalVotes": national_total, "parties": national_rows}, "towns": output}
 
-def aggregate_mayor_2018():
+def aggregate_mayor_csv(source_path):
     national = defaultdict(lambda: {"party": "", "votes": 0})
     counties = {}
 
-    if not SRC_2018.exists():
+    if not source_path.exists():
         return {"national": {"totalVotes": 0, "candidates": []}, "counties": {}}
 
-    with SRC_2018.open("r", encoding="utf-8-sig", newline="") as f:
+    with source_path.open("r", encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
             county = (row.get("area") or "").strip()
@@ -176,7 +177,7 @@ def aggregate_mayor_2018():
 payload = {
     "meta": {
         "source": "中央選舉委員會公開選舉資料",
-        "aggregation": "村里層級票數彙整至鄉鎮市區；2018縣市長歷史資料為縣市層級"
+        "aggregation": "總統與不分區資料彙整至鄉鎮市區；縣市長資料為縣市層級"
     },
     "president": {
         "year": 2024,
@@ -196,12 +197,12 @@ payload = {
     "mayor": {
         "year": 2022,
         "election": "111年直轄市長、縣市長選舉",
-        **aggregate_village_results("2022縣市長")
+        **aggregate_mayor_csv(SRC_2022)
     },
     "mayor2018": {
         "year": 2018,
         "election": "107年直轄市長、縣市長選舉",
-        **aggregate_mayor_2018()
+        **aggregate_mayor_csv(SRC_2018)
     }
 }
 
