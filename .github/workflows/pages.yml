@@ -24,6 +24,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Build election data
+        run: |
+          rm -rf /tmp/cec
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/kiang/db.cec.gov.tw.git /tmp/cec
+          cd /tmp/cec
+          git sparse-checkout set data/elections/2020-2024
+          cd "$GITHUB_WORKSPACE"
+          python3 scripts/build_election_data.py
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
