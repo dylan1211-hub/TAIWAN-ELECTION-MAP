@@ -161,14 +161,35 @@ OFFICIAL_PARTYLIST_2024 = [
 
 def aggregate_mayor_towns():
     """Build complete 2022 county/city mayor results at township/district scale from CEC raw vote data."""
-    vote_roots = [
-        Path("/tmp/cec/voteData/2022-111年地方公職人員選舉/C1/city"),
-        Path("/tmp/cec/voteData/2022-111年地方公職人員選舉/C1/prv"),
-    ]
-    if not all((root / "elcand.csv").exists() and (root / "elbase.csv").exists() and (root / "elctks.csv").exists() for root in vote_roots):
+    root_base = Path("/tmp/cec/voteData/2022-111年地方公職人員選舉/C1")
+    roots = [root_base / "city", root_base / "prv"]
+    if not all((root / "elcand.csv").exists() and (root / "elbase.csv").exists() and (root / "elctks.csv").exists() for root in roots):
         return {}
 
-    # Candidate metadata is keyed by county/city code + candidate number.
+    county_by_codes = {
+        ("63", "000"): "臺北市",
+        ("65", "000"): "新北市",
+        ("68", "000"): "桃園市",
+        ("66", "000"): "臺中市",
+        ("67", "000"): "臺南市",
+        ("64", "000"): "高雄市",
+        ("10", "002"): "宜蘭縣",
+        ("10", "004"): "新竹縣",
+        ("10", "005"): "苗栗縣",
+        ("10", "007"): "彰化縣",
+        ("10", "008"): "南投縣",
+        ("10", "009"): "雲林縣",
+        ("10", "010"): "嘉義縣",
+        ("10", "013"): "屏東縣",
+        ("10", "014"): "臺東縣",
+        ("10", "015"): "花蓮縣",
+        ("10", "016"): "澎湖縣",
+        ("10", "017"): "基隆市",
+        ("10", "018"): "新竹市",
+        ("10", "020"): "金門縣",
+        ("09", "007"): "連江縣",
+    }
+
     party_by_candidate = {}
     for party_source in (SRC_2022, SRC_2022_CITY):
         if not party_source.exists():
@@ -182,14 +203,14 @@ def aggregate_mayor_towns():
 
     towns = {}
 
-    def load_root(root):
-        # elbase maps the first four hierarchy codes to the named township/district.
+    for root in roots:
         place_lookup = {}
         with (root / "elbase.csv").open("r", encoding="utf-8-sig", newline="") as f:
             for row in csv.reader(f):
                 if len(row) < 6:
                     continue
                 prv, city, level, area, li, name = [x.strip() for x in row[:6]]
+                # li_code=0000 is the parent township/district row.
                 if li == "0000" and area != "000":
                     place_lookup[(prv, city, level, area)] = name
 
@@ -200,8 +221,10 @@ def aggregate_mayor_towns():
                     continue
                 prv, city, level, area, li, cand_no, name = [x.strip() for x in row[:7]]
                 if cand_no.isdigit():
-                    party = party_by_candidate.get(name, normalize_party(""))
-                    candidate_lookup[(prv, city, cand_no)] = (name, party)
+                    candidate_lookup[(prv, city, cand_no)] = (
+                        name,
+                        party_by_candidate.get(name, normalize_party(""))
+                    )
 
         with (root / "elctks.csv").open("r", encoding="utf-8-sig", newline="") as f:
             for row in csv.reader(f):
@@ -210,117 +233,54 @@ def aggregate_mayor_towns():
                 prv, city, level, area, li, dept, cand_no = [x.strip() for x in row[:7]]
                 if not cand_no.isdigit():
                     continue
+                place = place_lookup.get((prv, city, level, area))
+                candidate = candidate_lookup.get((prv, city, cand_no))
+                if not place or not candidate:
+                    continue
                 try:
                     votes = int(str(row[7]).replace(",", "") or 0)
                 except ValueError:
                     votes = 0
-                if votes == 0:
+                if votes <= 0:
                     continue
 
-                place = place_lookup.get((prv, city, level, area))
-                cand = candidate_lookup.get((prv, city, cand_no))
-                if not place or not cand:
+                county = county_by_codes.get((prv, city))
+                if not county:
                     continue
-
-                name, party = cand
-                county = next((c for c, code in {
-                    "臺北市":"63","新北市":"65","桃園市":"68","臺中市":"66","臺南市":"67","高雄市":"64",
-                    "宜蘭縣":"02","新竹縣":"04","苗栗縣":"05","彰化縣":"07","南投縣":"08","雲林縣":"09",
-                    "嘉義縣":"10","屏東縣":"13","臺東縣":"14","花蓮縣":"15","澎湖縣":"16","基隆市":"17",
-                    "新竹市":"18","嘉義市":"20","金門縣":"20","連江縣":"07"
-                }.items() if code == city and (prv == "63" or c in ("宜蘭縣","新竹縣","苗栗縣","彰化縣","南投縣","雲林縣","嘉義縣","屏東縣","臺東縣","花蓮縣","澎湖縣","基隆市","新竹市","嘉義市","金門縣","連江縣")), None)
-                # Prefer the county/city encoded by the candidate metadata source.
-                # The local map only needs the place name; county is filled below from the map's
-                # canonical county name where possible.
-                if prv == "63":
-                    county = {"000":"臺北市","":"臺北市"}.get(city, county or "")
-                else:
-                    county_codes = {"002":"宜蘭縣","004":"新竹縣","005":"苗栗縣","007":"彰化縣","008":"南投縣","009":"雲林縣","010":"嘉義縣","013":"屏東縣","014":"臺東縣","015":"花蓮縣","016":"澎湖縣","017":"基隆市","018":"新竹市","020":"金門縣","007":"連江縣"}
-                    county = county_codes.get(city, county or "")
-
-                # For city mayor files, city_code=000 and prv_code=63; derive the city from the
-                # first-level place code by known place names when necessary.
-                if prv == "63" and city == "000":
-                    city_names = {
-                        "臺北市": {"010","020","030","040","050","060","070","080","090","100","110","120"},
-                        "新北市": {"010","020","030","040","050","060","070","080","090","100","110","120","130","140","150","160","170","180","190","200","210","220","230","240","250","260","270","280","290"},
-                        "桃園市": {"010","020","030","040","050","060","070","080","090","100","110","120","130"},
-                        "臺中市": {"010","020","030","040","050","060","070","080","090","100","110","120","130","140","150","160","170","180","190","200","210","220","230","240","250","260","270","280","290"},
-                        "臺南市": {"010","020","030","040","050","060","070","080","090","100","110","120","130","140","150","160","170","180","190","200","210","220","230","240","250","260"},
-                        "高雄市": {"010","020","030","040","050","060","070","080","090","100","110","120","130","140","150","160","170","180","190","200","210","220","230","240","250","260","270","280","290","300","310","320","330","340","350","360","370","380"},
-                    }
-                    # city mayor raw data is separated under C1/city; candidate source already identifies
-                    # the six municipalities, so use the current root to infer the city.
-                    root_city = {
-                        "臺北市": "臺北市",
-                        "新北市": "新北市",
-                        "桃園市": "桃園市",
-                        "臺中市": "臺中市",
-                        "臺南市": "臺南市",
-                        "高雄市": "高雄市",
-                    }
-                    # The C1/city directories are one shared dataset; resolve the city from the
-                    # first candidate's province/city code is not sufficient, so fall back to place
-                    # matching against the town name later. This branch is intentionally left blank.
-                    county = ""
 
                 code = f"mayor-{county}-{place}"
-                bucket = towns.setdefault(code, {
-                    "county": county,
-                    "town": place,
-                    "candidates": defaultdict(lambda: {"party": "", "votes": 0})
-                })
+                bucket = towns.setdefault(
+                    code,
+                    {
+                        "county": county,
+                        "town": place,
+                        "candidates": defaultdict(lambda: {"party": "", "votes": 0})
+                    }
+                )
+                name, party = candidate
                 bucket["candidates"][name]["party"] = party
                 bucket["candidates"][name]["votes"] += votes
 
-    # The shared C1/city dataset contains the six municipalities; infer their county names directly
-    # from the source candidate table by re-reading each city's candidate list and aggregate by
-    # area code. A simpler and safer approach is to use the known city->area name mapping below.
-    # Rebuild city-mayor rows separately with explicit province/city names.
-    city_names_by_code = {"63":"臺北市"}
-    city_candidate_rows = {}
-    city_root = vote_roots[0]
-    with (city_root / "elcand.csv").open("r", encoding="utf-8-sig", newline="") as f:
-        for row in csv.reader(f):
-            if len(row) >= 7 and row[5].isdigit():
-                city_candidate_rows[(row[0].strip(), row[1].strip(), row[5].strip())] = (row[6].strip(), party_by_candidate.get(row[6].strip(), normalize_party("")))
+    output = {}
+    for code, item in towns.items():
+        rows = sorted(item["candidates"].items(), key=lambda x: -x[1]["votes"])
+        total = sum(v["votes"] for _, v in rows)
+        output[code] = {
+            "county": item["county"],
+            "town": item["town"],
+            "totalVotes": total,
+            "candidates": [
+                {
+                    "name": name,
+                    "party": val["party"],
+                    "votes": val["votes"],
+                    "share": round(val["votes"] / total * 100, 2) if total else 0
+                }
+                for name, val in rows
+            ]
+        }
 
-    city_vote_buckets = {}
-    place_lookup = {}
-    with (city_root / "elbase.csv").open("r", encoding="utf-8-sig", newline="") as f:
-        for row in csv.reader(f):
-            if len(row) >= 6 and row[4].strip() == "0000" and row[3].strip() != "000":
-                place_lookup[(row[0].strip(),row[1].strip(),row[2].strip(),row[3].strip())]=row[5].strip()
-    with (city_root / "elctks.csv").open("r", encoding="utf-8-sig", newline="") as f:
-        for row in csv.reader(f):
-            if len(row) < 8 or not row[6].strip().isdigit():
-                continue
-            prv, city, level, area = [x.strip() for x in row[:4]]
-            cand_no=row[6].strip()
-            try: votes=int(str(row[7]).replace(",","") or 0)
-            except ValueError: votes=0
-            place=place_lookup.get((prv,city,level,area))
-            cand=city_candidate_rows.get((prv,city,cand_no))
-            if not place or not cand or not votes:
-                continue
-            city_bucket = city_vote_buckets.setdefault(area, {"town":place,"candidates":defaultdict(lambda:{"party":"","votes":0})})
-            city_bucket["candidates"][cand[0]]["party"]=cand[1]
-            city_bucket["candidates"][cand[0]]["votes"]+=votes
-
-    # Resolve municipality for each area by matching the area code against the known Taiwan Atlas
-    # names is not available at build time, so use the six official city candidate totals to choose
-    # the municipality from the candidate set. The raw C1/city file stores one city at a time in the
-    # candidate metadata; the dataset's candidate file repeats city_code=000, so we retain a fixed
-    # city sequence based on the source order when building the final JSON below.
-    #
-    # Instead of guessing, keep only county/province mayor data here. Municipalities are added from
-    # the existing third-party source where complete town data is available.
-    for code,item in list(towns.items()):
-        if not item["county"]:
-            del towns[code]
-
-    # Preserve the existing complete city-mayor source for the six municipalities if available.
-    return towns
+    return output
 
 def aggregate_mayor_csv(source_paths):
     national = defaultdict(lambda: {"party": "", "votes": 0})
