@@ -197,7 +197,7 @@ function aggregate(features){
 function applyElectionColors(){
   if(!electionData)return;
   svg.selectAll(".town").each(function(d){
-    const row=electionData.towns[d.properties.TOWNCODE];
+    const row=townResult(d.properties.TOWNCODE);
     const leader=row?.candidates?.[0];
     d3.select(this)
       .classed("result-enabled",!!row)
