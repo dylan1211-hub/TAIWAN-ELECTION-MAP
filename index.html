@@ -336,13 +336,24 @@ function renderPie(data){
   const el=$("voteShareChart");
   if(!el || typeof echarts==="undefined")return;
   if(!voteShareChart) voteShareChart=echarts.init(el,"dark");
-  const rows=(data?.candidates||[]).filter(x=>Number(x.votes)>0);
-  const total=rows.reduce((s,x)=>s+Number(x.votes||0),0);
-  const leader=rows[0];
-  if(!rows.length){
+  if(activeKey==="mayor" && $("place").textContent==="全臺"){
     voteShareChart.clear();
+    el.innerHTML='<div class="empty" style="text-align:center;padding-top:55px">請選擇縣市或鄉鎮市區<br>查看該選區候選人得票率</div>';
     return;
   }
+  const rows=(data?.candidates||[]).filter(x=>Number(x.votes)>0);
+  if(!rows.length){
+    voteShareChart.clear();
+    el.innerHTML='<div class="empty" style="text-align:center;padding-top:55px">目前選取範圍沒有可用的得票資料。</div>';
+    return;
+  }
+  const sorted=[...rows].sort((a,b)=>b.votes-a.votes);
+  const top=sorted.slice(0,5);
+  const rest=sorted.slice(5).reduce((s,x)=>s+Number(x.votes||0),0);
+  if(rest>0) top.push({name:"其他",party:"其他",votes:rest});
+  const total=top.reduce((s,x)=>s+Number(x.votes||0),0);
+  const leader=top[0];
+  const shares=top.map(x=>({...x,share:total?x.votes/total*100:0}));
   voteShareChart.setOption({
     backgroundColor:"transparent",
     animationDuration:500,
@@ -353,14 +364,7 @@ function renderPie(data){
       textStyle:{color:"#e7edf5",fontSize:12},
       formatter:p=>p.name+"<br><b>"+fmt(p.value)+" 票</b>　"+p.percent.toFixed(2)+"%"
     },
-    legend:{
-      bottom:0,
-      left:"center",
-      itemWidth:8,
-      itemHeight:8,
-      itemGap:12,
-      textStyle:{color:"#9aa8ba",fontSize:10}
-    },
+    legend:{show:false},
     title:{
       text:leader?leader.share.toFixed(2)+"%":"",
       subtext:leader?"最高得票":"候選人",
@@ -373,25 +377,17 @@ function renderPie(data){
       name:"候選人得票",
       type:"pie",
       radius:["52%","76%"],
-      center:["50%","43%"],
+      center:["50%","46%"],
       avoidLabelOverlap:true,
       stillShowZeroSum:false,
       itemStyle:{borderColor:"#0d131d",borderWidth:3,borderRadius:5},
-      label:{show:false},
-      emphasis:{
-        scale:true,
-        scaleSize:5,
-        itemStyle:{shadowBlur:18,shadowColor:"rgba(0,0,0,.35)"}
-      },
-      data:rows.map(x=>({
-        value:Number(x.votes),
-        name:x.name,
-        itemStyle:{color:partyColor(x.party)}
-      }))
+      label:{show:true,position:"outside",formatter:p=>p.name+"  "+p.percent.toFixed(1)+"%",color:"#aab6c6",fontSize:9},
+      labelLine:{show:true,lineStyle:{color:"#4b5869"}},
+      emphasis:{scale:true,scaleSize:5},
+      data:shares.map(x=>({value:Number(x.votes),name:x.name,itemStyle:{color:partyColor(x.party)}}))
     }]
   },true);
 }
-
 function renderRegionKpis(data){
   const box=$("regionKpis");
   if(!box)return;
