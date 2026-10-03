@@ -292,7 +292,9 @@ function aggregateHistory(features){
 function applyElectionColors(){
   if(!activeDataset)return;
   svg.selectAll(".town").each(function(d){
-    const row=townResult(d.properties.TOWNCODE);
+    const row=activeKey==="mayor"
+      ? activeDataset?.counties?.[d.properties.COUNTYNAME]
+      : townResult(d.properties.TOWNCODE);
     const leader=row?.candidates?.[0];
     d3.select(this)
       .classed("result-enabled",!!row)
@@ -535,10 +537,18 @@ function selectCountyByCode(code){
   updateTownMenu(code);
   selectedFeatures=fs;
   zoomTo(fs);
-  updatePanel(fs[0]?.properties.COUNTYNAME||"縣市",aggregate(fs));
+  const countyName=fs[0]?.properties.COUNTYNAME||"縣市";
+  const data=activeKey==="mayor"
+    ? activeDataset?.counties?.[countyName]
+    : aggregate(fs);
+  updatePanel(countyName,data);
 }
 
 function selectTown(d){
+  if(activeKey==="mayor"){
+    selectCountyByCode(d.properties.COUNTYCODE);
+    return;
+  }
   clearSelection();
   selectedCode=d.properties.TOWNCODE;
   selectedFeatures=[d];
@@ -560,13 +570,15 @@ function setElectionType(){
   activeKey=type==="mayor"?"mayor":"president";
   activeDataset=electionData?.[activeKey];
   $("year").innerHTML=activeKey==="mayor"?'<option value="2022">2022</option>':'<option value="2024">2024</option>';
+  $("town").disabled=activeKey==="mayor";
+  $("town").title=activeKey==="mayor"?"縣市長資料目前為縣市層級":"";
   selectedCode=null;
   selectedFeatures=towns;
   clearSelection();
   applyElectionColors();
   zoomTo(towns);
   updatePanel("全臺",activeDataset?.national);
-  $("status").textContent="行政區地圖｜"+(activeDataset?.year||"")+" "+(activeDataset?.election||"");
+  $("status").textContent="行政區地圖｜"+(activeDataset?.year||"")+" "+(activeDataset?.election||"")+"｜"+(activeKey==="mayor"?"縣市層級":"鄉鎮市區層級");
 }
 $("electionType").onchange=setElectionType;
 $("year").onchange=()=>{activeDataset=electionData?.[activeKey];applyElectionColors();updatePanel($("place").textContent,activeDataset?.national)};
@@ -585,6 +597,7 @@ Promise.all([
   selectedFeatures=towns;
   activeDataset._townLookup=buildTownLookup(activeDataset);
   electionData.mayor._townLookup=buildTownLookup(electionData.mayor);
+  $("town").disabled=false;
   partyTownLookup=buildPartyTownLookup();
   history2020Lookup=buildHistoryLookup(electionData.president2020);
   mayor2018Lookup=electionData.mayor2018?.counties||{};
