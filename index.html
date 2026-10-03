@@ -21,7 +21,7 @@
 </div>
 <script>
 const $=id=>document.getElementById(id),svg=d3.select('#svg');
-let g,zoom,towns=[],path,selectedCode=null;
+let g,zoom,towns=[],projection,path,selectedCode=null;
 const DATA_URL='https://cdn.jsdelivr.net/npm/taiwan-atlas@2021.9.20/towns-10t.json';
 
 function orderNorthSouth(a,b){return path.centroid(a)[1]-path.centroid(b)[1]}
@@ -30,8 +30,9 @@ function setup(topo){
   const townFeatures=topojson.feature(topo,topo.objects.towns).features;
   towns=townFeatures;
   g=svg.append('g');
-  path=d3.geoMercator();
-  path.fitExtent([[24,18],[svg.node().clientWidth-24,svg.node().clientHeight-18]],{type:'FeatureCollection',features:towns});
+  projection=d3.geoMercator();
+  path=d3.geoPath(projection);
+  path.projection().fitExtent([[24,18],[svg.node().clientWidth-24,svg.node().clientHeight-18]],{type:'FeatureCollection',features:towns});
 
   g.selectAll('.town').data(towns).join('path')
     .attr('class','town').attr('d',path)
