@@ -456,7 +456,7 @@ def aggregate_bulk_election(source_dir, town_map, kind, year):
         county = None
         # area-level parent can be recovered from elbase; build a small lookup
         # lazily from the same codes when needed.
-        county = county_lookup.get((prv, city)) if 'county_lookup' in locals() else None
+        county = county_lookup.get((prv, city))
         if not county:
             continue
         try:
