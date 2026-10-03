@@ -494,6 +494,13 @@ def build_historical_data(town_map):
                     found = p
                     break
             if not found:
+                root = Path("/tmp/cec/voteData")
+                candidates = [p for p in root.iterdir() if p.is_dir() and p.name.startswith(str(year))]
+                keyword = "總統" if kind=="president" else "縣市長"
+                matches = [p for p in candidates if keyword in p.name]
+                if matches:
+                    found = sorted(matches, key=lambda p: len(p.name))[0]
+            if not found:
                 raise FileNotFoundError(f"CEC source not found for {kind} {year}: {dirs}")
             # Inject a county-code lookup used by the generic parser.
             global county_lookup
