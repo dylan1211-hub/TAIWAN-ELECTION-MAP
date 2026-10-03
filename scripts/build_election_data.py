@@ -175,7 +175,7 @@ def aggregate_mayor_towns():
         "Nantou":"南投縣","Penghu":"澎湖縣","Pingtung":"屏東縣","Taitung":"臺東縣",
         "Yilan":"宜蘭縣","Yunlin":"雲林縣","Kaohsiung":"高雄市","Newtaipei":"新北市",
         "Taichung":"臺中市","Tainan":"臺南市","Taipei":"臺北市","Taoyuan":"桃園市",
-        "Hsinchu-city":"新竹市"
+        "New":"新竹市","Newtaipei":"新北市"
     }
     towns={}
     for p in LOCAL_MAYOR.rglob("*_2022_poll_statistics.csv"):
