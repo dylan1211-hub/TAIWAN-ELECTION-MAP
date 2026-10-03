@@ -109,11 +109,13 @@ def aggregate_partylist():
             "parties": defaultdict(int)
         })
 
-        for name, item in result.items():
-            if not isinstance(item, dict):
-                continue
-            votes = int(item.get("votes", 0) or 0)
-            party = item.get("party", "") or name
+        # The source JSON stores party-list votes as plain integers,
+        # e.g. {"民主進步黨": 931, "中國國民黨": 1276}.
+        for party, value in result.items():
+            try:
+                votes = int(value or 0)
+            except (TypeError, ValueError):
+                votes = 0
             bucket["parties"][party] += votes
             national[party]["party"] = party
             national[party]["votes"] += votes
