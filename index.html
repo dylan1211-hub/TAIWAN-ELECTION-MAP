@@ -410,8 +410,8 @@ function renderPie(data){
       avoidLabelOverlap:true,
       stillShowZeroSum:false,
       itemStyle:{borderColor:"#0d131d",borderWidth:3,borderRadius:5},
-      label:{show:true,position:"outside",formatter:p=>p.name+"  "+p.percent.toFixed(1)+"%",color:"#aab6c6",fontSize:9},
-      labelLine:{show:true,lineStyle:{color:"#4b5869"}},
+      label:{show:false},
+      labelLine:{show:false},
       emphasis:{scale:true,scaleSize:5},
       data:shares.map(x=>({value:Number(x.votes),name:x.name,itemStyle:{color:partyColor(x.party)}}))
     }]
