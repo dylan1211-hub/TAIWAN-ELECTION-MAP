@@ -533,10 +533,12 @@ def aggregate_bulk_election(source_dir, town_map, kind, year):
 
     output = {}
     dropped = 0
+    unmatched_names = []
     for (county, town), item in towns.items():
         code = town_map_code(town_map, county, town)
         if not code:
             dropped += 1
+            unmatched_names.append(f"{normalize_admin_name(county)}／{normalize_admin_name(town)}")
             continue
         rows = sorted(item["candidates"].items(), key=lambda x: -x[1]["votes"])
         total = sum(v["votes"] for _, v in rows)
@@ -552,6 +554,8 @@ def aggregate_bulk_election(source_dir, town_map, kind, year):
     total = sum(v["votes"] for v in national.values())
     national_rows = [{"name":n,"party":v["party"],"votes":v["votes"],"share":round(v["votes"]/total*100,2) if total else 0} for n,v in sorted(national.items(), key=lambda x:-x[1]["votes"])]
     print(f"Aligned {kind} {year}: towns={len(output)}, unmatched_places={dropped}")
+    if unmatched_names:
+        print("  Unmatched:", ", ".join(unmatched_names[:200]))
     return {"year":year, "election":HISTORICAL_ELECTION_NAMES.get(year) if kind=="president" else MAYOR_ELECTION_NAMES.get(year), "national":{"totalVotes":total,"candidates":national_rows}, "towns":output}
 
 def discover_bulk_sources(root, keyword=""):
