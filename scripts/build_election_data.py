@@ -186,8 +186,9 @@ def aggregate_mayor_towns():
         ("10", "016"): "澎湖縣",
         ("10", "017"): "基隆市",
         ("10", "018"): "新竹市",
-        ("10", "020"): "金門縣",
+        ("10", "020"): "嘉義市",
         ("09", "007"): "連江縣",
+        ("09", "020"): "金門縣",
     }
 
     party_by_candidate = {}
@@ -366,4 +367,4 @@ payload = {
 }
 
 OUT.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-print(f"Generated {OUT}: president={len(payload['president']['towns'])}, mayor_counties={len(payload['mayor']['counties'])}, mayor2018_counties={len(payload['mayor2018']['counties'])}")
+print(f"Generated {OUT}: president={len(payload['president']['towns'])}, mayor_counties={len(payload['mayor']['counties'])}, mayor_towns={len(payload['mayor']['towns'])}, chiayi_districts={sum(1 for x in payload['mayor']['towns'].values() if x.get('county')=='嘉義市')}, mayor2018_counties={len(payload['mayor2018']['counties'])}")
