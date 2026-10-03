@@ -183,8 +183,10 @@ def aggregate_mayor_csv(source_path):
 
 president_2024 = aggregate_village_results("2024總統")
 president_2020 = aggregate_village_results("2020總統")
+partylist_2024 = aggregate_partylist()
 president_2024["national"] = {"totalVotes": OFFICIAL_PRESIDENT_HISTORY[2024]["validVotes"], "candidates": OFFICIAL_PRESIDENT_HISTORY[2024]["candidates"]}
 president_2020["national"] = {"totalVotes": OFFICIAL_PRESIDENT_HISTORY[2020]["validVotes"], "candidates": OFFICIAL_PRESIDENT_HISTORY[2020]["candidates"]}
+partylist_2024["national"] = {"totalVotes": sum(x["votes"] for x in OFFICIAL_PARTYLIST_2024), "parties": OFFICIAL_PARTYLIST_2024}
 
 payload = {
     "meta": {
@@ -207,7 +209,7 @@ payload = {
     "partylist": {
         "year": 2024,
         "election": "第11屆立法委員全國不分區及僑居國外國民選舉",
-        **aggregate_partylist()
+        **partylist_2024
     },
     "mayor": {
         "year": 2022,
