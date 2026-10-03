@@ -24,6 +24,9 @@ def normalize_party(party):
 
 def aggregate_village_results(section_name):
     towns = {}
+    debug_rows = 0
+    debug_place = 0
+    debug_cand = 0
     national = defaultdict(lambda: {"party": "", "votes": 0})
 
     for p in SRC.glob("*.json"):
@@ -442,8 +445,11 @@ def aggregate_bulk_election(source_dir, town_map, kind, year):
         prv, city, level, area, li, dept, cand_no = row[:7]
         if not cand_no.isdigit():
             continue
+        debug_rows += 1
         place = place_lookup.get((prv, city, area))
         cand = candidate_lookup.get((prv, city, cand_no)) or candidate_lookup.get(("00", "000", cand_no))
+        if place: debug_place += 1
+        if cand: debug_cand += 1
         if not place or not cand:
             continue
         # Find the county name from the parent administrative row.
@@ -485,6 +491,7 @@ def aggregate_bulk_election(source_dir, town_map, kind, year):
 
     total = sum(v["votes"] for v in national.values())
     national_rows = [{"name":n,"party":v["party"],"votes":v["votes"],"share":round(v["votes"]/total*100,2) if total else 0} for n,v in sorted(national.items(), key=lambda x:-x[1]["votes"])]
+    print(f"DEBUG {kind} {year}: place_lookup={len(place_lookup)}, candidate_lookup={len(candidate_lookup)}, rows={debug_rows}, place_hits={debug_place}, candidate_hits={debug_cand}")
     print(f"Aligned {kind} {year}: towns={len(output)}, unmatched_places={dropped}")
     return {"year":year, "election":HISTORICAL_ELECTION_NAMES.get(year) if kind=="president" else MAYOR_ELECTION_NAMES.get(year), "national":{"totalVotes":total,"candidates":national_rows}, "towns":output}
 
