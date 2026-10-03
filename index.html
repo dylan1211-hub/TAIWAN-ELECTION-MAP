@@ -221,11 +221,17 @@ function buildTownLookup(source=activeDataset){
   }
   return merged;
 }
+function normalizePlaceName(v){
+  return String(v||"").trim().replace(/台/g,"臺").replace(/\s+/g,"");
+}
+function mayorPlaceKey(county,town){
+  return normalizePlaceName(county)+"|"+normalizePlaceName(town);
+}
 function townResult(code){
   if(activeKey==="mayor"){
     const f=towns.find(x=>String(x.properties.TOWNCODE)===String(code));
     if(!f)return null;
-    return mayorNameLookup[f.properties.COUNTYNAME+"|"+f.properties.TOWNNAME]||null;
+    return mayorNameLookup[mayorPlaceKey(f.properties.COUNTYNAME,f.properties.TOWNNAME)]||null;
   }
   return activeDataset?._townLookup?.[String(code).slice(0,8)]||null;
 }
@@ -607,7 +613,9 @@ Promise.all([
   activeDataset._townLookup=buildTownLookup(activeDataset);
   electionData.mayor._townLookup=buildTownLookup(electionData.mayor);
   mayorNameLookup={};
-  Object.values(electionData.mayor.towns||{}).forEach(row=>{mayorNameLookup[row.county+"|"+row.town]=row;});
+  Object.values(electionData.mayor.towns||{}).forEach(row=>{
+    mayorNameLookup[mayorPlaceKey(row.county,row.town)]=row;
+  });
   $("town").disabled=false;
   partyTownLookup=buildPartyTownLookup();
   history2020Lookup=buildHistoryLookup(electionData.president2020);
