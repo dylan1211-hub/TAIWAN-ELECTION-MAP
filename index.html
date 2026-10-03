@@ -391,6 +391,10 @@ function renderPie(data){
 function renderRegionKpis(data){
   const box=$("regionKpis");
   if(!box)return;
+  if(activeKey==="mayor" && $("place").textContent==="全臺"){
+    box.innerHTML='<div class="empty" style="grid-column:1/-1">縣市長為各縣市分別選舉，無單一「全臺候選人得票率」。<br>請選擇縣市或鄉鎮市區查看詳細結果。</div>';
+    return;
+  }
   const leader=data?.candidates?.[0];
   box.innerHTML=[
     ["候選組數",(data?.candidates||[]).length+" 組"],
@@ -507,7 +511,7 @@ function renderMayorHistory(){
 
 function updatePanel(name,data){
   $("place").textContent=name;
-  $("validVotes").textContent=data?fmt(data.totalVotes):"—";
+  $("validVotes").textContent=(activeKey==="mayor" && name==="全臺")?"—":(data?fmt(data.totalVotes):"—");
   $("dataBadge").textContent=$("year").value+" "+$("electionType").selectedOptions[0].textContent;
   $("dataLevel").textContent="資料層級："+(name==="全臺"?"全臺":(activeKey==="mayor"?"縣市":"鄉鎮市區"));
   const panelData=data||activeDataset?.national;
