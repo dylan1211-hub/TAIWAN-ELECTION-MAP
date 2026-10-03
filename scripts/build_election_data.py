@@ -1,4 +1,5 @@
 import csv
+import csv
 import json
 from pathlib import Path
 from collections import defaultdict
@@ -207,4 +208,4 @@ payload = {
 }
 
 OUT.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-print(f"Generated {OUT}: president={len(payload['president']['towns'])}, mayor={len(payload['mayor']['towns'])}, mayor2018_counties={len(payload['mayor2018']['counties'])}")
+print(f"Generated {OUT}: president={len(payload['president']['towns'])}, mayor_counties={len(payload['mayor']['counties'])}, mayor2018_counties={len(payload['mayor2018']['counties'])}")
