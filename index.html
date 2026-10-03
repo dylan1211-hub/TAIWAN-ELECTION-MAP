@@ -43,7 +43,7 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
 .legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;color:var(--muted);font-size:11px}
 .legend-item{display:flex;align-items:center;gap:5px}.dot{width:8px;height:8px;border-radius:50%}
 .source{margin-top:20px;color:var(--muted);font-size:10px;line-height:1.6}.chart-box{height:190px;width:100%}.mini-chart{height:165px;width:100%}.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.kpi-card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px}.kpi-label{font-size:9px;color:var(--muted)}.kpi-value{font-size:16px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}.module-hidden{display:none}.pie-wrap{display:none}.pie-legend{display:none}
-.hint{margin-top:20px;color:var(--muted);font-size:12px;line-height:1.7}.history-panel{grid-column:1 / -1;grid-row:2;background:var(--panel);border-top:1px solid var(--line);padding:16px 22px;display:grid;grid-template-columns:1.05fr 1fr 1.7fr;gap:16px;min-height:0}.history-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}.history-title{font-size:14px;font-weight:700}.history-sub{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5}.history-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0;overflow:hidden}.history-chart{height:220px;width:100%}.history-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.history-year-card{border:1px solid var(--line);border-radius:8px;padding:9px;background:#0d151f}.history-year{font-size:10px;color:var(--muted)}.history-winner{font-size:13px;font-weight:700;margin-top:4px}.history-meta{font-size:10px;color:#9aa8ba;margin-top:3px}.history-stat{font-size:10px;color:var(--muted);margin-top:7px}.right-summary{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0 4px}.right-summary .kpi-card{padding:9px}.data-level{font-size:10px;color:var(--muted);margin:7px 0 12px}.section-title{font-size:11px;color:var(--muted);margin:18px 0 8px}
+.hint{margin-top:20px;color:var(--muted);font-size:12px;line-height:1.7}.history-panel{grid-column:1 / -1;grid-row:2;background:var(--panel);border-top:1px solid var(--line);padding:16px 22px;display:grid;grid-template-columns:1.05fr 1fr 1.7fr;gap:16px;min-height:0}.history-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}.history-title{font-size:14px;font-weight:700}.history-sub{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5}.history-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0;overflow:hidden}.history-chart{height:220px;width:100%}.history-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.history-year-card{border:1px solid var(--line);border-radius:8px;padding:8px;background:#0d151f;min-width:0}.history-year{font-size:10px;color:var(--muted)}.history-winner{font-size:13px;font-weight:700;margin-top:4px}.history-meta{font-size:10px;color:#9aa8ba;margin-top:3px}.history-stat{font-size:10px;color:var(--muted);margin-top:5px}.right-summary{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0 4px}.right-summary .kpi-card{padding:9px}.data-level{font-size:10px;color:var(--muted);margin:7px 0 12px}.section-title{font-size:11px;color:var(--muted);margin:18px 0 8px}
 .badge{display:inline-block;padding:3px 7px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:10px;margin-bottom:12px}
 .empty{color:var(--muted);font-size:12px;line-height:1.7;padding:12px 0}
 .tooltip{position:fixed;z-index:20;pointer-events:none;min-width:230px;background:#0b111aee;border:1px solid #3a485b;border-radius:9px;padding:11px 12px;box-shadow:0 12px 35px #0008;backdrop-filter:blur(8px);display:none}.tooltip-title{font-size:14px;font-weight:650;margin-bottom:8px}.tooltip-row{display:grid;grid-template-columns:1fr auto;gap:12px;font-size:11px;padding:4px 0}.tooltip-party{color:var(--muted)}.tooltip-share{font-variant-numeric:tabular-nums;font-weight:650}
@@ -92,6 +92,9 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
 
   <div class="section-title">候選組得票</div>
   <div id="candidates"></div>
+
+  <div class="section-title">得票率構成</div>
+  <div class="pie-wrap"><div id="voteShareChart"></div></div>
 
   <div class="section-title" id="partylistTitle">2024 不分區政黨票</div>
   <div class="mini-chart" id="partylistChart"></div>
@@ -290,7 +293,7 @@ function applyElectionColors(){
   if(!activeDataset)return;
   svg.selectAll(".town").each(function(d){
     const row=activeKey==="mayor"
-      ? activeDataset?.counties?.[d.properties.COUNTYNAME]
+      ? townResult(d.properties.TOWNCODE)
       : townResult(d.properties.TOWNCODE);
     const leader=row?.candidates?.[0];
     d3.select(this)
@@ -458,35 +461,48 @@ function renderHistory(){
     series:parties.map(p=>({name:p,type:"line",smooth:true,symbol:"circle",symbolSize:5,data:years.map(y=>{const x=history[y]?.candidates?.find(c=>c.party===p);return x?x.share:null}),connectNulls:false,lineStyle:{width:2,color:partyColor(p)},itemStyle:{color:partyColor(p)}}))
   },true);
 }
+function partyShares(bucket){
+  const out={};
+  for(const x of bucket?.candidates||[]){
+    const p=x.party||"無黨籍及未經政黨推薦";
+    out[p]=(out[p]||0)+Number(x.votes||0);
+  }
+  const total=Object.values(out).reduce((a,b)=>a+b,0)||1;
+  return out;
+}
 function renderMayorHistory(){
-  const history=[["2018",electionData?.mayor2018?.national],["2022",electionData?.mayor?.national]];
-  $("historyMetricTitle").textContent="縣市長全國候選組得票率";
-  $("historyShareTitle").textContent="2018 → 2022 政黨得票率";
-  $("historyPanel").querySelector(".history-sub").textContent="2018–2022 全國縣市長選舉";
-  $("historyCards").innerHTML=history.map(([y,s])=>{
-    const lead=s?.candidates?.[0];
-    return '<div class="history-year-card"><div class="history-year">'+y+'</div><div class="history-winner">'+(lead?.name||"—")+'</div><div class="history-meta">'+(lead?.party||"—")+'</div><div class="history-stat">得票率 '+(lead?.share?.toFixed(2)||"—")+'%</div><div class="history-stat">票數 '+fmt(lead?.votes||0)+'</div></div>';
-  }).join("");
-  const parties=["民主進步黨","中國國民黨","無黨籍／其他"];
-  const rows=history.map(([y,s])=>({year:y,shares:partyShares(s,parties)}));
+  const counties=electionData?.mayor?.counties||{};
+  const rows=Object.entries(counties).map(([county,s])=>{
+    const shares=partyShares(s);
+    return {county, dpp:(shares["民主進步黨"]||0)/s.totalVotes*100, kmt:(shares["中國國民黨"]||0)/s.totalVotes*100, tpp:(shares["台灣民眾黨"]||0)/s.totalVotes*100, other:Math.max(0,100-(shares["民主進步黨"]||0)/s.totalVotes*100-(shares["中國國民黨"]||0)/s.totalVotes*100-(shares["台灣民眾黨"]||0)/s.totalVotes*100)};
+  }).sort((a,b)=>b.dpp+a.kmt*0-b.dpp);
+  $("historyMetricTitle").textContent="各縣市政黨得票率";
+  $("historyShareTitle").textContent="2022 各縣市政黨得票率";
+  $("historyPanel").querySelector(".history-sub").textContent="2022 縣市長選舉｜22 縣市比較";
+  const top=Object.entries(counties).map(([county,s])=>({county,lead:s.candidates?.[0]})).filter(x=>x.lead);
+  $("historyCards").innerHTML=top.slice(0,4).map(x=>'<div class="history-year-card"><div class="history-year">'+x.county+'</div><div class="history-winner">'+x.lead.name+'</div><div class="history-meta">'+x.lead.party+'</div><div class="history-stat">'+x.lead.share.toFixed(2)+'%</div></div>').join("");
   if(!historyTurnoutChartInstance)historyTurnoutChartInstance=echarts.init($("historyTurnoutChart"),"dark");
   historyTurnoutChartInstance.setOption({
-    animationDuration:450,grid:{left:34,right:20,top:12,bottom:28},
-    xAxis:{type:"category",data:rows.map(x=>x.year),axisLabel:{color:"#8190a4",fontSize:10}},
-    yAxis:{type:"value",min:0,max:60,axisLabel:{color:"#8190a4",fontSize:9,formatter:v=>v+"%"},splitLine:{lineStyle:{color:"#263242"}}},
-    tooltip:{trigger:"axis",backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},valueFormatter:v=>Number(v).toFixed(2)+"%"},
+    animationDuration:450,grid:{left:80,right:20,top:18,bottom:28},
+    xAxis:{type:"value",max:100,axisLabel:{color:"#8190a4",fontSize:9,formatter:v=>v+"%"},splitLine:{lineStyle:{color:"#263242"}}},
+    yAxis:{type:"category",inverse:true,data:rows.map(x=>x.county),axisLabel:{color:"#9aa8ba",fontSize:9}},
+    tooltip:{trigger:"axis",axisPointer:{type:"shadow"},backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},valueFormatter:v=>Number(v).toFixed(2)+"%"},
     legend:{bottom:0,textStyle:{color:"#9aa8ba",fontSize:9},itemWidth:10,itemHeight:7},
-    series:parties.map((p,i)=>({name:p,type:"bar",barMaxWidth:18,data:rows.map(x=>x.shares[i].share),itemStyle:{color:partyColor(p),borderRadius:[3,3,0,0]}}))
+    series:[
+      {name:"民主進步黨",type:"bar",stack:"total",data:rows.map(x=>x.dpp),itemStyle:{color:partyColor("民主進步黨")}},
+      {name:"中國國民黨",type:"bar",stack:"total",data:rows.map(x=>x.kmt),itemStyle:{color:partyColor("中國國民黨")}},
+      {name:"台灣民眾黨",type:"bar",stack:"total",data:rows.map(x=>x.tpp),itemStyle:{color:partyColor("台灣民眾黨")}},
+      {name:"其他",type:"bar",stack:"total",data:rows.map(x=>x.other),itemStyle:{color:"#738196"}}
+    ]
   },true);
   if(!historyShareChartInstance)historyShareChartInstance=echarts.init($("historyShareChart"),"dark");
-  const candidates=Array.from(new Set(history.flatMap(([y,s])=>(s?.candidates||[]).map(x=>x.name))));
+  const ranked=rows.slice().sort((a,b)=>Math.max(b.dpp,b.kmt,b.tpp,b.other)-Math.max(a.dpp,a.kmt,a.tpp,a.other));
   historyShareChartInstance.setOption({
-    animationDuration:450,grid:{left:34,right:20,top:12,bottom:26},
-    xAxis:{type:"category",data:history.map(x=>x[0]),axisLabel:{color:"#8190a4",fontSize:10}},
-    yAxis:{type:"value",min:0,max:60,axisLabel:{color:"#8190a4",fontSize:9,formatter:v=>v+"%"},splitLine:{lineStyle:{color:"#263242"}}},
-    tooltip:{trigger:"axis",backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},valueFormatter:v=>Number(v).toFixed(2)+"%"},
-    legend:{bottom:0,textStyle:{color:"#9aa8ba",fontSize:9},itemWidth:10,itemHeight:7},
-    series:candidates.map(name=>({name,type:"line",smooth:true,symbol:"circle",symbolSize:5,data:history.map(([y,s])=>{const x=(s?.candidates||[]).find(v=>v.name===name);return x?x.share:null}),connectNulls:false,lineStyle:{width:2,color:partyColor((history.flatMap(([y,s])=>s?.candidates||[]).find(v=>v.name===name)||{}).party)},itemStyle:{color:partyColor((history.flatMap(([y,s])=>s?.candidates||[]).find(v=>v.name===name)||{}).party)}}))
+    animationDuration:450,grid:{left:80,right:20,top:18,bottom:28},
+    xAxis:{type:"value",max:65,axisLabel:{color:"#8190a4",fontSize:9,formatter:v=>v+"%"},splitLine:{lineStyle:{color:"#263242"}}},
+    yAxis:{type:"category",inverse:true,data:ranked.map(x=>x.county),axisLabel:{color:"#9aa8ba",fontSize:9}},
+    tooltip:{trigger:"axis",axisPointer:{type:"shadow"},backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},valueFormatter:v=>Number(v).toFixed(2)+"%"},
+    series:[{name:"最高政黨得票率",type:"bar",data:ranked.map(x=>Math.max(x.dpp,x.kmt,x.tpp,x.other)),itemStyle:{color:"#67d5ff"},barMaxWidth:12}]
   },true);
 }
 
@@ -515,6 +531,7 @@ function updatePanel(name,data){
   const panelData=data||activeDataset?.national;
   renderRegionKpis(panelData);
   renderCandidates(panelData);
+  renderPie(panelData);
   const partyData=selectedFeatures.length>1?aggregatePartylist(selectedFeatures):(partyTownResult(selectedCode)||electionData?.partylist?.national);
   renderPartylist(partyData);
   renderHistory();
@@ -553,10 +570,6 @@ function selectCountyByCode(code){
 }
 
 function selectTown(d){
-  if(activeKey==="mayor"){
-    selectCountyByCode(d.properties.COUNTYCODE);
-    return;
-  }
   clearSelection();
   selectedCode=d.properties.TOWNCODE;
   selectedFeatures=[d];
@@ -578,15 +591,15 @@ function setElectionType(){
   activeKey=type==="mayor"?"mayor":"president";
   activeDataset=electionData?.[activeKey];
   $("year").innerHTML=activeKey==="mayor"?'<option value="2022">2022</option>':'<option value="2024">2024</option>';
-  $("town").disabled=activeKey==="mayor";
-  $("town").title=activeKey==="mayor"?"縣市長資料目前為縣市層級":"";
+  $("town").disabled=false;
+  $("town").title="";
   selectedCode=null;
   selectedFeatures=towns;
   clearSelection();
   applyElectionColors();
   zoomTo(towns);
   updatePanel("全臺",activeDataset?.national);
-  $("status").textContent="行政區地圖｜"+(activeDataset?.year||"")+" "+(activeDataset?.election||"")+"｜"+(activeKey==="mayor"?"縣市層級":"鄉鎮市區層級");
+  $("status").textContent="行政區地圖｜"+(activeDataset?.year||"")+" "+(activeDataset?.election||"")+"｜"+(activeKey==="mayor"?"鄉鎮市區層級":"鄉鎮市區層級");
 }
 $("electionType").onchange=setElectionType;
 $("year").onchange=()=>{activeDataset=electionData?.[activeKey];applyElectionColors();updatePanel($("place").textContent,activeDataset?.national)};
