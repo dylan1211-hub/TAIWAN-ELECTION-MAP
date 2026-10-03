@@ -450,7 +450,6 @@ function renderHistory(){
   panel.querySelector(".history-sub").textContent="2012–2024 全國總統副總統選舉";
   const history=electionData?.presidentHistory||{};
   const years=[2012,2016,2020,2024];
-  const cards=$("historyCards");
   cards.innerHTML=years.map(y=>{
     const s=history[y];
     const lead=s?.candidates?.[0];
@@ -508,16 +507,6 @@ function renderMayorHistory(){
       {name:"其他",type:"bar",stack:"total",data:rows.map(x=>x.other),itemStyle:{color:"#738196"}}
     ]
   },true);
-  if(!historyShareChartInstance)historyShareChartInstance=echarts.init($("historyShareChart"),"dark");
-  const ranked=rows.slice().sort((a,b)=>Math.max(b.dpp,b.kmt,b.tpp,b.other)-Math.max(a.dpp,a.kmt,a.tpp,a.other));
-  historyShareChartInstance.setOption({
-    animationDuration:450,grid:{left:80,right:20,top:18,bottom:28},
-    xAxis:{type:"value",max:65,axisLabel:{color:"#8190a4",fontSize:9,formatter:v=>v+"%"},splitLine:{lineStyle:{color:"#263242"}}},
-    yAxis:{type:"category",inverse:true,data:ranked.map(x=>x.county),axisLabel:{color:"#9aa8ba",fontSize:9}},
-    tooltip:{trigger:"axis",axisPointer:{type:"shadow"},backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},valueFormatter:v=>Number(v).toFixed(2)+"%"},
-    series:[{name:"最高政黨得票率",type:"bar",data:ranked.map(x=>Math.max(x.dpp,x.kmt,x.tpp,x.other)),itemStyle:{color:"#67d5ff"},barMaxWidth:12}]
-  },true);
-}
 
 function renderCandidates(data){
   const box=$("candidates");
