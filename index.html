@@ -44,7 +44,8 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
 .source{margin-top:20px;color:var(--muted);font-size:10px;line-height:1.6}
 .hint{margin-top:20px;color:var(--muted);font-size:12px;line-height:1.7}
 .badge{display:inline-block;padding:3px 7px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:10px;margin-bottom:12px}
-.empty{color:var(--muted);font-size:12px;line-height:1.7;padding:12px 0}\n.tooltip{position:fixed;z-index:20;pointer-events:none;min-width:230px;background:#0b111aee;border:1px solid #3a485b;border-radius:9px;padding:11px 12px;box-shadow:0 12px 35px #0008;backdrop-filter:blur(8px);display:none}.tooltip-title{font-size:14px;font-weight:650;margin-bottom:8px}.tooltip-row{display:grid;grid-template-columns:1fr auto;gap:12px;font-size:11px;padding:4px 0}.tooltip-party{color:var(--muted)}.tooltip-share{font-variant-numeric:tabular-nums;font-weight:650}
+.empty{color:var(--muted);font-size:12px;line-height:1.7;padding:12px 0}
+.tooltip{position:fixed;z-index:20;pointer-events:none;min-width:230px;background:#0b111aee;border:1px solid #3a485b;border-radius:9px;padding:11px 12px;box-shadow:0 12px 35px #0008;backdrop-filter:blur(8px);display:none}.tooltip-title{font-size:14px;font-weight:650;margin-bottom:8px}.tooltip-row{display:grid;grid-template-columns:1fr auto;gap:12px;font-size:11px;padding:4px 0}.tooltip-party{color:var(--muted)}.tooltip-share{font-variant-numeric:tabular-nums;font-weight:650}
 </style>
 </head>
 <body>
@@ -253,7 +254,17 @@ function hideTownTooltip(){
   $("tooltip").style.display="none";
 }
 
-function renderPie(data){\n  const rows=data?.candidates||[];\n  const pie=$("pie"),legend=$("pieLegend");\n  if(!rows.length){pie.style.background="var(--panel2)";legend.innerHTML="";return;}\n  let start=0,segments=[];\n  rows.forEach(x=>{const end=start+x.share;segments.push(partyColor(x.party)+" "+start+"% "+end+"%");start=end;});\n  pie.style.background="conic-gradient("+segments.join(",")+")";\n  legend.innerHTML=rows.map(x=>'<div class="pie-item"><span class="pie-dot" style="background:'+partyColor(x.party)+'"></span><span>'+x.name+'</span><span class="pie-share">'+x.share.toFixed(2)+'%</span></div>').join("");\n}\n\nfunction renderCandidates(data){
+function renderPie(data){
+  const rows=data?.candidates||[];
+  const pie=$("pie"),legend=$("pieLegend");
+  if(!rows.length){pie.style.background="var(--panel2)";legend.innerHTML="";return;}
+  let start=0,segments=[];
+  rows.forEach(x=>{const end=start+x.share;segments.push(partyColor(x.party)+" "+start+"% "+end+"%");start=end;});
+  pie.style.background="conic-gradient("+segments.join(",")+")";
+  legend.innerHTML=rows.map(x=>'<div class="pie-item"><span class="pie-dot" style="background:'+partyColor(x.party)+'"></span><span>'+x.name+'</span><span class="pie-share">'+x.share.toFixed(2)+'%</span></div>').join("");
+}
+
+function renderCandidates(data){
   const box=$("candidates");
   if(!data?.candidates?.length){
     box.innerHTML='<div class="empty">目前選取範圍沒有可用的選舉票數資料。</div>';
@@ -276,7 +287,9 @@ function updatePanel(name,data){
   $("metricYear").textContent=$("year").value;
   $("validVotes").textContent=data?fmt(data.totalVotes):"—";
   $("dataBadge").textContent=$("year").value+" "+$("electionType").selectedOptions[0].textContent;
-  const panelData=data||electionData?.national;\n  renderCandidates(panelData);\n  renderPie(panelData);
+  const panelData=data||electionData?.national;
+  renderCandidates(panelData);
+  renderPie(panelData);
   $("status").textContent=name+"｜"+$("year").value+" "+$("electionType").selectedOptions[0].textContent;
 }
 
