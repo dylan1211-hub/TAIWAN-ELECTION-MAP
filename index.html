@@ -42,7 +42,7 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
 .bar-fill{height:100%;border-radius:99px}
 .legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;color:var(--muted);font-size:11px}
 .legend-item{display:flex;align-items:center;gap:5px}.dot{width:8px;height:8px;border-radius:50%}
-.source{margin-top:20px;color:var(--muted);font-size:10px;line-height:1.6}.chart-box{height:190px;width:100%}.pie-wrap{display:block}.pie-legend{display:none}
+.source{margin-top:20px;color:var(--muted);font-size:10px;line-height:1.6}.chart-box{height:190px;width:100%}.mini-chart{height:165px;width:100%}.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.kpi-card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px}.kpi-label{font-size:9px;color:var(--muted)}.kpi-value{font-size:16px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}.module-hidden{display:none}.pie-wrap{display:block}.pie-legend{display:none}
 .hint{margin-top:20px;color:var(--muted);font-size:12px;line-height:1.7}
 .badge{display:inline-block;padding:3px 7px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:10px;margin-bottom:12px}
 .empty{color:var(--muted);font-size:12px;line-height:1.7;padding:12px 0}
@@ -93,6 +93,9 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
   <div class="metric"><span>有效票</span><span id="validVotes">—</span></div>
   <div class="metric"><span>投票率</span><span id="turnout">待接入</span></div>
 
+  <div class="section-title">區域統計</div>
+  <div class="kpi-grid" id="regionKpis"></div>
+
   <div class="section-title">候選人得票</div>
   <div id="candidates"></div>
 
@@ -100,6 +103,12 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
   <div class="pie-wrap">
     <div class="chart-box" id="voteShareChart" aria-label="候選人得票率構成圖"></div>
   </div>
+
+  <div class="section-title" id="partylistTitle">不分區政黨票</div>
+  <div class="mini-chart" id="partylistChart"></div>
+
+  <div class="section-title" id="trendTitle">歷年政黨得票率</div>
+  <div class="mini-chart" id="trendChart"></div>
 
   <div class="section-title">政黨色彩圖例</div>
   <div class="legend">
@@ -117,7 +126,8 @@ const $=id=>document.getElementById(id),svg=d3.select("#svg");
 let g,zoom,towns=[],projection,path,selectedCode=null,electionData=null,voteShareChart=null;
 
 const MAP_URL="https://cdn.jsdelivr.net/npm/taiwan-atlas@2021.9.20/towns-10t.json";
-const DATA_URL="data/2024_presidential_town.json";
+const DATA_URL="data/elections.json";
+let activeKey="president",activeDataset=null,partyTownLookup={},history2020Lookup={};
 
 const PARTY_COLOR={
   "民主進步黨":"#1b9e3f",
@@ -158,7 +168,7 @@ function setup(topo){
 
   populateMenus();
   applyElectionColors();
-  updatePanel("全臺",null);
+  updatePanel("全臺",activeDataset?.national);
   $("status").textContent="行政區地圖｜2024 總統結果";
 }
 
@@ -201,9 +211,9 @@ function aggregate(features){
   return {totalVotes:total,candidates};
 }
 
-function buildTownLookup(){
+function buildTownLookup(source=activeDataset){
   const merged={};
-  for(const [code,row] of Object.entries(electionData?.towns||{})){
+  for(const [code,row] of Object.entries(source?.towns||{})){
     const townCode=String(code).slice(0,8);
     if(!merged[townCode]) merged[townCode]={county:row.county,town:row.town,totalVotes:0,candidates:{}};
     const out=merged[townCode];
@@ -219,11 +229,47 @@ function buildTownLookup(){
   return merged;
 }
 function townResult(code){
-  return electionData?._townLookup?.[String(code).slice(0,8)]||null;
+  return activeDataset?._townLookup?.[String(code).slice(0,8)]||null;
 }
+function buildPartyTownLookup(){
+  const merged={};
+  for(const [code,row] of Object.entries(electionData?.partylist?.towns||{})){
+    const townCode=String(code).slice(0,8);
+    if(!merged[townCode])merged[townCode]={county:row.county,town:row.town,totalVotes:0,parties:{}};
+    const out=merged[townCode];
+    out.totalVotes+=Number(row.totalVotes||0);
+    for(const x of row.parties||[]){
+      if(!out.parties[x.name])out.parties[x.name]={name:x.name,party:x.party,votes:0};
+      out.parties[x.name].votes+=Number(x.votes||0);
+    }
+  }
+  for(const out of Object.values(merged)){
+    out.parties=Object.values(out.parties).sort((a,b)=>b.votes-a.votes).map(x=>({...x,share:out.totalVotes?x.votes/out.totalVotes*100:0}));
+  }
+  return merged;
+}
+function partyTownResult(code){return partyTownLookup[String(code).slice(0,8)]||null;}
+function buildHistoryLookup(source){
+  const merged={};
+  for(const [code,row] of Object.entries(source?.towns||{})){
+    const townCode=String(code).slice(0,8);
+    if(!merged[townCode])merged[townCode]={county:row.county,town:row.town,totalVotes:0,candidates:{}};
+    const out=merged[townCode];
+    out.totalVotes+=Number(row.totalVotes||0);
+    for(const x of row.candidates||[]){
+      if(!out.candidates[x.name])out.candidates[x.name]={name:x.name,party:x.party,votes:0};
+      out.candidates[x.name].votes+=Number(x.votes||0);
+    }
+  }
+  for(const out of Object.values(merged)){
+    out.candidates=Object.values(out.candidates).sort((a,b)=>b.votes-a.votes).map(x=>({...x,share:out.totalVotes?x.votes/out.totalVotes*100:0}));
+  }
+  return merged;
+}
+function historyResult(code){return history2020Lookup[String(code).slice(0,8)]||null;}
 
 function applyElectionColors(){
-  if(!electionData)return;
+  if(!activeDataset)return;
   svg.selectAll(".town").each(function(d){
     const row=townResult(d.properties.TOWNCODE);
     const leader=row?.candidates?.[0];
@@ -320,6 +366,43 @@ function renderPie(data){
   },true);
 }
 
+function renderRegionKpis(data){
+  const box=$("regionKpis");
+  if(!box)return;
+  if(!data){box.innerHTML="";return;}
+  const leader=data.candidates?.[0];
+  box.innerHTML=[
+    ["有效票",fmt(data.totalVotes)],
+    ["候選人數",(data.candidates||[]).length+" 組"],
+    ["最高得票",leader?leader.name:"—"],
+    ["最高得票率",leader?leader.share.toFixed(2)+"%":"—"]
+  ].map(x=>'<div class="kpi-card"><div class="kpi-label">'+x[0]+'</div><div class="kpi-value">'+x[1]+'</div></div>').join("");
+}
+function renderPartylist(data){
+  const el=$("partylistChart"),title=$("partylistTitle");
+  if(!el||!title)return;
+  if(activeKey!=="president"){title.classList.add("module-hidden");el.classList.add("module-hidden");return;}
+  title.classList.remove("module-hidden");el.classList.remove("module-hidden");
+  if(!data){el.innerHTML="";return;}
+  const rows=(data.parties||[]).filter(x=>x.votes>0).slice(0,8);
+  if(!rows.length){el.innerHTML='<div class="empty">目前範圍沒有不分區資料。</div>';return;}
+  if(!window.partyChart)window.partyChart=echarts.init(el,"dark");
+  window.partyChart.setOption({animationDuration:450,grid:{left:72,right:12,top:4,bottom:4},xAxis:{type:"value",show:false},yAxis:{type:"category",inverse:true,data:rows.map(x=>x.name),axisLabel:{color:"#9aa8ba",fontSize:9},axisLine:{show:false},axisTick:{show:false}},tooltip:{trigger:"axis",axisPointer:{type:"shadow"},backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},formatter:p=>p[0].name+"<br><b>"+fmt(p[0].value)+" 票</b>　"+rows[p[0].dataIndex].share.toFixed(2)+"%"} ,series:[{type:"bar",data:rows.map(x=>({value:x.votes,itemStyle:{color:partyColor(x.party||x.name),borderRadius:[0,4,4,0]}})),barWidth:10,label:{show:true,position:"right",color:"#aab6c6",fontSize:9,formatter:p=>rows[p.dataIndex].share.toFixed(1)+"%"}}]},true);
+}
+function renderTrend(code){
+  const el=$("trendChart"),title=$("trendTitle");
+  if(!el||!title)return;
+  if(activeKey!=="president"){title.classList.add("module-hidden");el.classList.add("module-hidden");return;}
+  title.classList.remove("module-hidden");el.classList.remove("module-hidden");
+  const current=townResult(code)||electionData?.president?.national;
+  const previous=code?historyResult(code):electionData?.president2020?.national;
+  if(!current||!previous){el.innerHTML='<div class="empty">歷年資料不足。</div>';return;}
+  const parties=["民主進步黨","中國國民黨","台灣民眾黨"];
+  const byParty=row=>parties.map(p=>({party:p,share:(row.candidates||[]).filter(x=>x.party===p).reduce((s,x)=>s+x.votes,0)/(row.totalVotes||1)*100}));
+  const a=byParty(previous),b=byParty(current);
+  if(!window.trendChart)window.trendChart=echarts.init(el,"dark");
+  window.trendChart.setOption({animationDuration:450,grid:{left:32,right:10,top:15,bottom:24},xAxis:{type:"category",data:["2020","2024"],axisLabel:{color:"#8190a4",fontSize:9}},yAxis:{type:"value",min:0,max:100,axisLabel:{color:"#8190a4",fontSize:9,formatter:v=>v+"%"},splitLine:{lineStyle:{color:"#263242"}}},tooltip:{trigger:"axis",backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},valueFormatter:v=>Number(v).toFixed(2)+"%"},legend:{show:false},series:parties.map((p,i)=>({name:p,type:"line",smooth:true,symbol:"circle",symbolSize:5,data:[a[i].share,b[i].share],lineStyle:{width:2,color:partyColor(p)},itemStyle:{color:partyColor(p)}}))},true);
+}
 function renderCandidates(data){
   const box=$("candidates");
   if(!data?.candidates?.length){
@@ -343,9 +426,13 @@ function updatePanel(name,data){
   $("metricYear").textContent=$("year").value;
   $("validVotes").textContent=data?fmt(data.totalVotes):"—";
   $("dataBadge").textContent=$("year").value+" "+$("electionType").selectedOptions[0].textContent;
-  const panelData=data||electionData?.national;
+  const panelData=data||activeDataset?.national;
+  renderRegionKpis(panelData);
   renderCandidates(panelData);
   renderPie(panelData);
+  const partyData=partyTownResult(selectedCode)||electionData?.partylist?.national;
+  renderPartylist(partyData);
+  renderTrend(selectedCode);
   $("status").textContent=name+"｜"+$("year").value+" "+$("electionType").selectedOptions[0].textContent;
 }
 
@@ -364,7 +451,7 @@ function selectCountyByCode(code){
   if(!code){
     updateTownMenu("");
     zoomTo(towns);
-    updatePanel("全臺",electionData?.national);
+    updatePanel("全臺",activeDataset?.national);
     return;
   }
   const fs=towns.filter(d=>d.properties.COUNTYCODE===code);
@@ -391,16 +478,20 @@ $("town").onchange=e=>{
   const d=towns.find(x=>x.properties.TOWNCODE===e.target.value);
   if(d)selectTown(d);
 };
-$("electionType").onchange=()=>{
-  const ok=$("electionType").value==="president";
-  if(!ok){
-    updatePanel($("place").textContent,null);
-    $("status").textContent="此選舉類型資料建置中";
-    return;
-  }
-  updatePanel($("place").textContent,electionData?.national);
-};
-$("year").onchange=()=>updatePanel($("place").textContent,electionData?.national);
+function setElectionType(){
+  const type=$("electionType").value;
+  activeKey=type==="mayor"?"mayor":"president";
+  activeDataset=electionData?.[activeKey];
+  $("year").innerHTML=activeKey==="mayor"?'<option value="2022">2022</option>':'<option value="2024">2024</option>';
+  selectedCode=null;
+  clearSelection();
+  applyElectionColors();
+  zoomTo(towns);
+  updatePanel("全臺",activeDataset?.national);
+  $("status").textContent="行政區地圖｜"+(activeDataset?.year||"")+" "+(activeDataset?.election||"");
+}
+$("electionType").onchange=setElectionType;
+$("year").onchange=()=>{activeDataset=electionData?.[activeKey];applyElectionColors();updatePanel($("place").textContent,activeDataset?.national)};
 window.addEventListener("resize",()=>{
   if(voteShareChart)voteShareChart.resize();
   else location.reload();
@@ -411,7 +502,11 @@ Promise.all([
   fetch(DATA_URL).then(r=>{if(!r.ok)throw new Error("選舉資料 HTTP "+r.status);return r.json()})
 ]).then(([topo,data])=>{
   electionData=data;
-  electionData._townLookup=buildTownLookup();
+  activeDataset=electionData.president;
+  activeDataset._townLookup=buildTownLookup(activeDataset);
+  electionData.mayor._townLookup=buildTownLookup(electionData.mayor);
+  partyTownLookup=buildPartyTownLookup();
+  history2020Lookup=buildHistoryLookup(electionData.president2020);
   setup(topo);
 }).catch(err=>{
   console.error("Taiwan election map error:",err);
