@@ -389,7 +389,7 @@ def read_csv_rows(path):
     # malformed legacy rows without aborting the whole build.
     with Path(path).open("r", encoding="utf-8-sig", newline="") as f:
         for row in csv.reader(f):
-            yield [str(x).strip() for x in row]
+            yield [str(x).strip().strip('"').lstrip("'") for x in row]
 
 def aggregate_bulk_election(source_dir, town_map, kind, year):
     root = Path(source_dir)
