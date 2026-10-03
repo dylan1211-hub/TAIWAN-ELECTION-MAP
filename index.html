@@ -118,7 +118,7 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
 
 <script>
 const $=id=>document.getElementById(id),svg=d3.select("#svg");
-let g,zoom,towns=[],projection,path,selectedCode=null,electionData=null,voteShareChart=null;
+let g,zoom,towns=[],projection,path,selectedCode=null,electionData=null,voteShareChart=null,partyChartInstance=null,trendChartInstance=null;
 
 const MAP_URL="https://cdn.jsdelivr.net/npm/taiwan-atlas@2021.9.20/towns-10t.json";
 const DATA_URL="data/elections.json";
@@ -409,8 +409,8 @@ function renderPartylist(data){
   if(!data){el.innerHTML="";return;}
   const rows=(data.parties||[]).filter(x=>x.votes>0).slice(0,8);
   if(!rows.length){el.innerHTML='<div class="empty">目前範圍沒有不分區資料。</div>';return;}
-  if(!window.partyChart)window.partyChart=echarts.init(el,"dark");
-  window.partyChart.setOption({animationDuration:450,grid:{left:72,right:12,top:4,bottom:4},xAxis:{type:"value",show:false},yAxis:{type:"category",inverse:true,data:rows.map(x=>x.name),axisLabel:{color:"#9aa8ba",fontSize:9},axisLine:{show:false},axisTick:{show:false}},tooltip:{trigger:"axis",axisPointer:{type:"shadow"},backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},formatter:p=>p[0].name+"<br><b>"+fmt(p[0].value)+" 票</b>　"+rows[p[0].dataIndex].share.toFixed(2)+"%"} ,series:[{type:"bar",data:rows.map(x=>({value:x.votes,itemStyle:{color:partyColor(x.party||x.name),borderRadius:[0,4,4,0]}})),barWidth:10,label:{show:true,position:"right",color:"#aab6c6",fontSize:9,formatter:p=>rows[p.dataIndex].share.toFixed(1)+"%"}}]},true);
+  if(!partyChartInstance)partyChartInstance=echarts.init(el,"dark");
+  partyChartInstance.setOption({animationDuration:450,grid:{left:72,right:12,top:4,bottom:4},xAxis:{type:"value",show:false},yAxis:{type:"category",inverse:true,data:rows.map(x=>x.name),axisLabel:{color:"#9aa8ba",fontSize:9},axisLine:{show:false},axisTick:{show:false}},tooltip:{trigger:"axis",axisPointer:{type:"shadow"},backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},formatter:p=>p[0].name+"<br><b>"+fmt(p[0].value)+" 票</b>　"+rows[p[0].dataIndex].share.toFixed(2)+"%"} ,series:[{type:"bar",data:rows.map(x=>({value:x.votes,itemStyle:{color:partyColor(x.party||x.name),borderRadius:[0,4,4,0]}})),barWidth:10,label:{show:true,position:"right",color:"#aab6c6",fontSize:9,formatter:p=>rows[p.dataIndex].share.toFixed(1)+"%"}}]},true);
 }
 function partyShares(row,parties=["民主進步黨","中國國民黨","台灣民眾黨","無黨籍／其他"]){
   const total=Number(row?.totalVotes||0)||1;
@@ -435,8 +435,8 @@ function renderPresidentTrend(code){
   title.textContent="歷年政黨得票率";
   const parties=["民主進步黨","中國國民黨","台灣民眾黨"];
   const a=partyShares(previous,parties),b=partyShares(current,parties);
-  if(!window.trendChart)window.trendChart=echarts.init(el,"dark");
-  window.trendChart.setOption({
+  if(!trendChartInstance)trendChartInstance=echarts.init(el,"dark");
+  trendChartInstance.setOption({
     animationDuration:450,
     grid:{left:32,right:10,top:15,bottom:24},
     xAxis:{type:"category",data:["2020","2024"],axisLabel:{color:"#8190a4",fontSize:9}},
@@ -584,8 +584,8 @@ $("electionType").onchange=setElectionType;
 $("year").onchange=()=>{activeDataset=electionData?.[activeKey];applyElectionColors();updatePanel($("place").textContent,activeDataset?.national)};
 window.addEventListener("resize",()=>{
   if(voteShareChart)voteShareChart.resize();
-  if(window.partyChart)window.partyChart.resize();
-  if(window.trendChart)window.trendChart.resize();
+  if(partyChartInstance)partyChartInstance.resize();
+  if(trendChartInstance)trendChartInstance.resize();
 });
 
 Promise.all([
