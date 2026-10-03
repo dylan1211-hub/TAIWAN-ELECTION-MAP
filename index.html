@@ -19,7 +19,7 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
 .label{font-size:11px;color:var(--muted);margin:18px 0 7px}
 .select{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px}
 .map{position:relative;min-width:0}.mapbar{position:absolute;z-index:3;left:20px;top:18px;background:#0d131dcc;border:1px solid var(--line);border-radius:9px;padding:8px 12px;color:var(--muted);font-size:12px}
-.map svg{width:100%;height:100%;display:block}
+.map svg{width:100%;height:100%;display:block}.map-legend{position:absolute;left:20px;bottom:18px;z-index:3;width:230px;background:#0d131de8;border:1px solid var(--line);border-radius:10px;padding:12px 13px;backdrop-filter:blur(8px);box-shadow:0 10px 25px #0005}.map-legend-title{font-size:11px;font-weight:650;margin-bottom:9px}.map-legend-sub{font-size:10px;color:var(--muted);margin-bottom:8px}.opacity-ramp{height:9px;border-radius:99px;background:linear-gradient(to right,rgba(103,213,255,.24),rgba(103,213,255,.48),rgba(103,213,255,.72),rgba(103,213,255,1));border:1px solid #3b4655}.opacity-ticks{display:flex;justify-content:space-between;color:var(--muted);font-size:9px;margin-top:4px}.map-legend-note{font-size:9px;color:var(--muted);margin-top:9px;line-height:1.45}
 .town{fill:#121b27;stroke:#344152;stroke-width:.42;cursor:pointer;transition:fill .15s}
 .town:hover{fill:#24364a}
 .town.selected{stroke:#fff;stroke-width:1.35;fill-opacity:.95}
@@ -80,7 +80,7 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
 <main class="map">
   <div class="mapbar" id="status">地圖資料載入中…</div>
   <svg id="svg"></svg>
-  <div class="zoom-controls"><button id="reset">↺</button><button id="zin">＋</button><button id="zout">－</button></div>
+  <div class="map-legend"><div class="map-legend-title">地圖圖例</div><div class="map-legend-sub">色彩＝領先候選人政黨　｜　深淺＝得票率</div><div class="opacity-ramp"></div><div class="opacity-ticks"><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div><div class="map-legend-note">得票率越高，該行政區的政黨色越深。</div></div><div class="zoom-controls"><button id="reset">↺</button><button id="zin">＋</button><button id="zout">－</button></div>
 </main>
 
 <aside class="right">
