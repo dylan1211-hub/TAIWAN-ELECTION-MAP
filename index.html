@@ -498,9 +498,9 @@ function renderHistory(){
   share.style.display="";
   cards.style.display="";
   mayorChart.style.display="none";
-  panel.querySelector(".history-sub").textContent="2012–2024 全國總統副總統選舉";
-  const history=electionData?.presidentHistory||{};
-  const years=[2012,2016,2020,2024];
+  panel.querySelector(".history-sub").textContent="1996–2024 全國總統副總統選舉";
+  const history=electionData?.presidents||{};
+  const years=Object.keys(history).map(Number).sort((a,b)=>a-b);
   cards.innerHTML=years.map(y=>{
     const s=history[y];
     const lead=s?.candidates?.[0];
@@ -535,13 +535,24 @@ function partyShares(bucket){
   return out;
 }
 function renderMayorHistory(){
-  const counties=electionData?.mayor?.counties||{};
-  const rows=Object.entries(counties).map(([county,s])=>{
+  const buckets={};
+  Object.values(activeDataset?.towns||{}).forEach(row=>{
+    const b=buckets[row.county]||(buckets[row.county]={totalVotes:0,candidates:{}});
+    b.totalVotes+=Number(row.totalVotes||0);
+    for(const c of row.candidates||[]){
+      if(!b.candidates[c.name])b.candidates[c.name]={party:c.party,votes:0};
+      b.candidates[c.name].votes+=Number(c.votes||0);
+    }
+  });
+  const rows=Object.entries(buckets).map(([county,s])=>{
+    s.candidates=Object.entries(s.candidates).map(([name,v])=>({name,party:v.party,votes:v.votes}));
+    const total=s.totalVotes||1;
+
     const shares=partyShares(s);
     return {county, dpp:(shares["民主進步黨"]||0)/s.totalVotes*100, kmt:(shares["中國國民黨"]||0)/s.totalVotes*100, tpp:(shares["台灣民眾黨"]||0)/s.totalVotes*100, other:Math.max(0,100-(shares["民主進步黨"]||0)/s.totalVotes*100-(shares["中國國民黨"]||0)/s.totalVotes*100-(shares["台灣民眾黨"]||0)/s.totalVotes*100)};
   }).sort((a,b)=>a.county.localeCompare(b.county,"zh-Hant"));
   $("historyCardOverview").querySelector(".history-title").textContent="縣市長選舉分析";
-  $("historyCardOverview").querySelector(".history-sub").textContent="2022 各縣市政黨得票率｜22 縣市比較";
+  $("historyCardOverview").querySelector(".history-sub").textContent=(activeDataset?.year||"")+" 各縣市政黨得票率｜依當年資料比較";
   $("historyCards").innerHTML="";
   if(!mayorAnalysisChartInstance)mayorAnalysisChartInstance=echarts.init($("mayorAnalysisChart"),"dark");
   mayorAnalysisChartInstance.setOption({
