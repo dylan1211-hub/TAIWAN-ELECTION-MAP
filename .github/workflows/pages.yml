@@ -33,6 +33,7 @@ jobs:
           rm -rf /tmp/local-election-dataset
           git clone --depth 1 https://github.com/LiuYuWei/2022-local-election-dataset.git /tmp/local-election-dataset
           cd "$GITHUB_WORKSPACE"
+          curl -L "https://taiwanvotes.tw/data/csv/%E7%B8%A3%E5%B8%82%E9%95%B7_2022_%E5%98%89%E7%BE%A9%E5%B8%82.csv?v=20260803111705" -o /tmp/chiayi_mayor_2022.csv
           python3 scripts/build_election_data.py
 
       - name: Setup Pages
