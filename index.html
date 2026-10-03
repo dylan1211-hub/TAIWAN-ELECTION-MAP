@@ -129,6 +129,16 @@ const PARTY_COLOR={
 };
 
 function fmt(n){return Number(n||0).toLocaleString("zh-TW")}
+function datasetFor(type,year){
+  const y=Number(year);
+  return electionData?.[type]?.[y] || electionData?.[type==="president"?"president":"mayor"];
+}
+function prepareDataset(ds){
+  if(!ds)return ds;
+  ds._townLookup=ds.towns||{};
+  return ds;
+}
+
 function partyColor(p){return PARTY_COLOR[p]||"#738196"}
 
 function setup(topo){
@@ -228,12 +238,14 @@ function mayorPlaceKey(county,town){
   return normalizePlaceName(county)+"|"+normalizePlaceName(town);
 }
 function townResult(code){
+  const f=towns.find(x=>String(x.properties.TOWNCODE)===String(code));
+  if(!f)return null;
   if(activeKey==="mayor"){
-    const f=towns.find(x=>String(x.properties.TOWNCODE)===String(code));
-    if(!f)return null;
+    const direct=activeDataset?._townLookup?.[String(code)]||null;
+    if(direct)return direct;
     return mayorNameLookup[mayorPlaceKey(f.properties.COUNTYNAME,f.properties.TOWNNAME)]||null;
   }
-  return activeDataset?._townLookup?.[String(code).slice(0,8)]||null;
+  return activeDataset?._townLookup?.[String(code)]||activeDataset?._townLookup?.[String(code).slice(0,8)]||null;
 }
 function buildPartyTownLookup(){
   const merged={};
@@ -445,7 +457,7 @@ function renderRegionKpis(data){
 function renderPartylist(data){
   const el=$("partylistChart"),title=$("partylistTitle");
   if(!el||!title)return;
-  if(activeKey!=="president"){title.classList.add("module-hidden");el.classList.add("module-hidden");return;}
+  if(activeKey!=="president" || Number($("year").value)!==2024){title.classList.add("module-hidden");el.classList.add("module-hidden");return;}
   title.classList.remove("module-hidden");el.classList.remove("module-hidden");
   if(!data){el.innerHTML="";return;}
   const rows=(data.parties||[]).filter(x=>x.votes>0).slice(0,8);
@@ -557,7 +569,9 @@ function updatePanel(name,data){
   const panelData=data||activeDataset?.national;
   renderRegionKpis(panelData);
   renderPie(panelData);
-  const partyData=selectedFeatures.length>1?aggregatePartylist(selectedFeatures):(partyTownResult(selectedCode)||electionData?.partylist?.national);
+  const partyData=(activeKey==="president" && Number($("year").value)===2024)
+    ? (selectedFeatures.length>1?aggregatePartylist(selectedFeatures):(partyTownResult(selectedCode)||electionData?.partylist?.national))
+    : null;
   renderPartylist(partyData);
   renderHistory();
   $("status").textContent=name+"｜"+$("year").value+" "+$("electionType").selectedOptions[0].textContent;
@@ -614,20 +628,27 @@ $("town").onchange=e=>{
 function setElectionType(){
   const type=$("electionType").value;
   activeKey=type==="mayor"?"mayor":"president";
-  activeDataset=electionData?.[activeKey];
-  $("year").innerHTML=activeKey==="mayor"?'<option value="2022">2022</option>':'<option value="2024">2024</option>';
-  $("town").disabled=false;
-  $("town").title="";
-  selectedCode=null;
-  selectedFeatures=towns;
-  clearSelection();
-  applyElectionColors();
-  zoomTo(towns);
-  updatePanel("全臺",activeDataset?.national);
-  $("status").textContent="行政區地圖｜"+(activeDataset?.year||"")+" "+(activeDataset?.election||"")+"｜"+(activeKey==="mayor"?"鄉鎮市區層級":"鄉鎮市區層級");
+  const years=electionData?.availableYears?.[activeKey]||[];
+  const current=activeKey==="mayor"?2022:2024;
+  $("year").innerHTML=years.slice().sort((a,b)=>b-a).map(y=>'<option value="'+y+'">'+y+'</option>').join("");
+  $("year").value=years.includes(current)?String(current):String(years[0]||current);
+  activeDataset=prepareDataset(datasetFor(activeKey,$("year").value));
+  $("town").disabled=false;$("town").title="";
+  selectedCode=null;selectedFeatures=towns;clearSelection();
+  partyTownLookup=buildPartyTownLookup();
+  mayorNameLookup={};
+  Object.values(activeDataset?.towns||{}).forEach(row=>{mayorNameLookup[mayorPlaceKey(row.county,row.town)]=row;});
+  applyElectionColors();zoomTo(towns);updatePanel("全臺",activeDataset?.national);
+  $("status").textContent="行政區地圖｜"+(activeDataset?.year||"")+" "+(activeDataset?.election||"")+"｜鄉鎮市區層級";
 }
 $("electionType").onchange=setElectionType;
-$("year").onchange=()=>{activeDataset=electionData?.[activeKey];applyElectionColors();updatePanel($("place").textContent,activeDataset?.national)};
+$("year").onchange=()=>{
+  activeDataset=prepareDataset(datasetFor(activeKey,$("year").value));
+  selectedCode=null;selectedFeatures=towns;clearSelection();
+  mayorNameLookup={};
+  Object.values(activeDataset?.towns||{}).forEach(row=>{mayorNameLookup[mayorPlaceKey(row.county,row.town)]=row;});
+  applyElectionColors();updatePanel("全臺",activeDataset?.national);
+};
 window.addEventListener("resize",()=>{
   if(voteShareChart)voteShareChart.resize();
   if(partyChartInstance)partyChartInstance.resize();
@@ -642,10 +663,10 @@ Promise.all([
   fetch(DATA_URL).then(r=>{if(!r.ok)throw new Error("選舉資料 HTTP "+r.status);return r.json()})
 ]).then(([topo,data])=>{
   electionData=data;
-  activeDataset=electionData.president;
+  activeDataset=prepareDataset(electionData.president);
   selectedFeatures=towns;
   activeDataset._townLookup=buildTownLookup(activeDataset);
-  electionData.mayor._townLookup=buildTownLookup(electionData.mayor);
+  if(electionData.mayor) electionData.mayor._townLookup=buildTownLookup(electionData.mayor);
   mayorNameLookup={};
   Object.values(electionData.mayor.towns||{}).forEach(row=>{
     mayorNameLookup[mayorPlaceKey(row.county,row.town)]=row;
