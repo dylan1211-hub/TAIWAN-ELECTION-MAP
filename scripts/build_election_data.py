@@ -527,6 +527,14 @@ presidents, mayors = build_historical_data(town_map)
 president_2024 = aggregate_village_results("2024總統")
 president_2020 = aggregate_village_results("2020總統")
 mayor_towns_2022 = aggregate_mayor_towns()
+mayor_2022_base = aggregate_mayor_csv((SRC_2022, SRC_2022_CITY))
+mayors[2022] = {
+    "year": 2022,
+    "election": MAYOR_ELECTION_NAMES[2022],
+    "national": mayor_2022_base["national"],
+    "counties": mayor_2022_base["counties"],
+    "towns": mayor_towns_2022
+}
 partylist_2024 = aggregate_partylist()
 president_2024["national"] = {"totalVotes": OFFICIAL_PRESIDENT_HISTORY[2024]["validVotes"], "candidates": OFFICIAL_PRESIDENT_HISTORY[2024]["candidates"]}
 president_2020["national"] = {"totalVotes": OFFICIAL_PRESIDENT_HISTORY[2020]["validVotes"], "candidates": OFFICIAL_PRESIDENT_HISTORY[2020]["candidates"]}
