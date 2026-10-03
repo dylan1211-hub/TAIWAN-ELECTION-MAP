@@ -5,7 +5,9 @@ from collections import defaultdict
 
 SRC = Path("/tmp/cec/data/elections/2020-2024")
 SRC_2018 = Path("/tmp/cec/data/2018/縣市長.csv")
+SRC_2018_CITY = Path("/tmp/cec/data/2018/直轄市長.csv")
 SRC_2022 = Path("/tmp/cec/data/2022/縣市長.csv")
+SRC_2022_CITY = Path("/tmp/cec/data/2022/直轄市長.csv")
 LOCAL_MAYOR = Path("/tmp/local-election-dataset/data/candidate_vote")
 OUT = Path("data/elections.json")
 OUT.parent.mkdir(parents=True, exist_ok=True)
@@ -162,8 +164,10 @@ def aggregate_mayor_towns():
     if not LOCAL_MAYOR.exists():
         return {}
     party_by_candidate = {}
-    if SRC_2022.exists():
-        with SRC_2022.open("r", encoding="utf-8-sig", newline="") as f:
+    for party_source in (SRC_2022, SRC_2022_CITY):
+        if not party_source.exists():
+            continue
+        with party_source.open("r", encoding="utf-8-sig", newline="") as f:
             for row in csv.DictReader(f):
                 name=(row.get("cand_name") or "").strip()
                 party=normalize_party(row.get("party",""))
@@ -190,7 +194,12 @@ def aggregate_mayor_towns():
         for row in rows[1:]:
             if not row: continue
             name=row[0].strip()
-            party=party_by_candidate.get(name,normalize_party(""))
+            party=party_by_candidate.get(name)
+            if party is None:
+                compact=name.replace(" ","").replace("　","")
+                party=party_by_candidate.get(compact)
+            if party is None:
+                party=normalize_party("")
             for idx,town in enumerate(headers,1):
                 if idx>=len(row): continue
                 try: votes=int(str(row[idx]).replace(",","") or 0)
@@ -209,27 +218,30 @@ def aggregate_mayor_towns():
                                    for n,v in rows]}
     return output
 
-def aggregate_mayor_csv(source_path):
+def aggregate_mayor_csv(source_paths):
     national = defaultdict(lambda: {"party": "", "votes": 0})
     counties = {}
 
-    if not source_path.exists():
-        return {"national": {"totalVotes": 0, "candidates": []}, "counties": {}}
+    if isinstance(source_paths, (str, Path)):
+        source_paths = [source_paths]
 
-    with source_path.open("r", encoding="utf-8-sig", newline="") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            county = (row.get("area") or "").strip()
-            name = (row.get("cand_name") or "").strip()
-            if not county or not name:
-                continue
-            party = normalize_party(row.get("party", ""))
-            votes = int((row.get("ticket_num") or "0").replace(",", "") or 0)
-            bucket = counties.setdefault(county, {"totalVotes": 0, "candidates": []})
-            bucket["totalVotes"] += votes
-            bucket["candidates"].append({"name": name, "party": party, "votes": votes})
-            national[name]["party"] = party
-            national[name]["votes"] += votes
+    for source_path in source_paths:
+        if not source_path.exists():
+            continue
+        with source_path.open("r", encoding="utf-8-sig", newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                county = (row.get("area") or "").strip()
+                name = (row.get("cand_name") or "").strip()
+                if not county or not name:
+                    continue
+                party = normalize_party(row.get("party", ""))
+                votes = int((row.get("ticket_num") or "0").replace(",", "") or 0)
+                bucket = counties.setdefault(county, {"totalVotes": 0, "candidates": []})
+                bucket["totalVotes"] += votes
+                bucket["candidates"].append({"name": name, "party": party, "votes": votes})
+                national[name]["party"] = party
+                national[name]["votes"] += votes
 
     for bucket in counties.values():
         total = bucket["totalVotes"]
@@ -256,7 +268,7 @@ partylist_2024["national"] = {"totalVotes": sum(x["votes"] for x in OFFICIAL_PAR
 payload = {
     "meta": {
         "source": "中央選舉委員會公開選舉資料",
-        "aggregation": "總統與不分區資料彙整至鄉鎮市區；縣市長資料為縣市層級"
+        "aggregation": "總統與不分區資料彙整至鄉鎮市區；縣市長資料彙整至縣市及鄉鎮市區層級"
     },
     "president": {
         "year": 2024,
@@ -279,13 +291,13 @@ payload = {
     "mayor": {
         "year": 2022,
         "election": "111年直轄市長、縣市長選舉",
-        **aggregate_mayor_csv(SRC_2022),
+        **aggregate_mayor_csv((SRC_2022, SRC_2022_CITY)),
         "towns": mayor_towns_2022
     },
     "mayor2018": {
         "year": 2018,
         "election": "107年直轄市長、縣市長選舉",
-        **aggregate_mayor_csv(SRC_2018)
+        **aggregate_mayor_csv((SRC_2018, SRC_2018_CITY))
     }
 }
 
