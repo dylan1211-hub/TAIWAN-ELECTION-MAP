@@ -324,6 +324,197 @@ def aggregate_mayor_csv(source_paths):
     ]
     return {"national": {"totalVotes": total, "candidates": national_rows}, "counties": counties}
 
+
+HISTORICAL_SOURCES = {
+    "president": {
+        1996: ["9任總統"],
+        2000: ["2000年10任總統"],
+        2004: ["2004   11任總統"],
+        2008: ["2008 12任總統"],
+        2012: ["20120114-總統及立委"],
+        2016: ["2016總統立委"],
+        2020: ["2020總統立委"],
+        2024: ["2024總統立委"],
+    },
+    "mayor": {
+        1997: ["1997縣市長"],
+        2001: ["2001縣市長"],
+        2005: ["2005縣市長"],
+        2009: ["20091205-縣市長縣市議員及鄉鎮長"],
+        2014: ["2014-103年地方公職人員選舉"],
+        2018: ["2018-107年地方公職人員選舉"],
+        2022: ["2022-111年地方公職人員選舉"],
+    },
+}
+
+HISTORICAL_ELECTION_NAMES = {
+    1996: "第09任總統副總統選舉", 2000: "第10任總統副總統選舉",
+    2004: "第11任總統副總統選舉", 2008: "第12任總統副總統選舉",
+    2012: "第13任總統副總統選舉", 2016: "第14任總統副總統選舉",
+    2020: "第15任總統副總統選舉", 2024: "第16任總統副總統選舉",
+}
+
+MAYOR_ELECTION_NAMES = {
+    1997: "86年縣市長選舉", 2001: "90年縣市長選舉", 2005: "94年縣市長選舉",
+    2009: "98年縣市長選舉", 2014: "103年縣市長選舉",
+    2018: "107年縣市長選舉", 2022: "111年縣市長選舉",
+}
+
+def normalize_admin_name(v):
+    v = str(v or "").strip().replace("台", "臺").replace("　", "").replace(" ", "")
+    county_alias = {
+        "臺北縣":"新北市", "桃園縣":"桃園市", "臺中縣":"臺中市",
+        "臺南縣":"臺南市", "高雄縣":"高雄市",
+    }
+    return county_alias.get(v, v)
+
+def load_current_town_map(path):
+    if not path or not Path(path).exists():
+        return {}
+    topo = json.loads(Path(path).read_text(encoding="utf-8"))
+    # TopoJSON stores geometries with properties directly on each town object.
+    towns = topo.get("objects", {}).get("towns", {}).get("geometries", [])
+    out = {}
+    for g in towns:
+        p = g.get("properties", {})
+        code = str(p.get("TOWNCODE") or "")
+        county = normalize_admin_name(p.get("COUNTYNAME"))
+        town = normalize_admin_name(p.get("TOWNNAME"))
+        if code and county and town:
+            out[(county, town)] = code
+    return out
+
+def read_csv_rows(path):
+    # CEC bulk files are UTF-8 in the maintained repository; tolerate BOM and
+    # malformed legacy rows without aborting the whole build.
+    with Path(path).open("r", encoding="utf-8-sig", newline="") as f:
+        for row in csv.reader(f):
+            yield [str(x).strip() for x in row]
+
+def aggregate_bulk_election(source_dir, town_map, kind, year):
+    root = Path(source_dir)
+    if not all((root / x).exists() for x in ("elbase.csv", "elcand.csv", "elctks.csv")):
+        raise FileNotFoundError(f"Missing CEC files in {root}")
+
+    party_lookup = {}
+    paty = root / "elpaty.csv"
+    if paty.exists():
+        for row in read_csv_rows(paty):
+            if len(row) >= 2:
+                party_lookup[row[0]] = normalize_party(row[1])
+
+    # Parent township/district name keyed by the CEC administrative codes.
+    place_lookup = {}
+    for row in read_csv_rows(root / "elbase.csv"):
+        if len(row) < 6:
+            continue
+        prv, city, level, area, li, name = row[:6]
+        if li == "0000" and area != "000":
+            place_lookup[(prv, city, level, area)] = normalize_admin_name(name)
+
+    candidate_lookup = {}
+    for row in read_csv_rows(root / "elcand.csv"):
+        if len(row) < 8:
+            continue
+        prv, city, level, area, li, cand_no, name, party_code = row[:8]
+        if not cand_no.isdigit():
+            continue
+        # Presidential files list both members of each ticket. Keep the first
+        # row per candidate number as the ticket label; vote counts are keyed
+        # by candidate/ticket number, so this prevents double counting.
+        key = (prv, city, cand_no)
+        if key in candidate_lookup:
+            continue
+        candidate_lookup[key] = (name, party_lookup.get(party_code, normalize_party("")))
+
+    towns = {}
+    national = defaultdict(lambda: {"party": "", "votes": 0})
+    unmatched = 0
+    for row in read_csv_rows(root / "elctks.csv"):
+        if len(row) < 8:
+            continue
+        prv, city, level, area, li, dept, cand_no = row[:7]
+        if not cand_no.isdigit():
+            continue
+        place = place_lookup.get((prv, city, level, area))
+        cand = candidate_lookup.get((prv, city, cand_no))
+        if not place or not cand:
+            continue
+        # Find the county name from the parent administrative row.
+        county = None
+        # area-level parent can be recovered from elbase; build a small lookup
+        # lazily from the same codes when needed.
+        county = county_lookup.get((prv, city)) if 'county_lookup' in locals() else None
+        if not county:
+            continue
+        try:
+            votes = int(str(row[7]).replace(",", "") or 0)
+        except ValueError:
+            votes = 0
+        if votes < 0:
+            votes = 0
+        key = (county, place)
+        bucket = towns.setdefault(key, {"county": county, "town": place, "candidates": defaultdict(lambda: {"party": "", "votes": 0})})
+        name, party = cand
+        bucket["candidates"][name]["party"] = party
+        bucket["candidates"][name]["votes"] += votes
+
+    output = {}
+    dropped = 0
+    for (county, town), item in towns.items():
+        code = town_map.get((normalize_admin_name(county), normalize_admin_name(town)))
+        if not code:
+            dropped += 1
+            continue
+        rows = sorted(item["candidates"].items(), key=lambda x: -x[1]["votes"])
+        total = sum(v["votes"] for _, v in rows)
+        output[str(code)] = {
+            "county": normalize_admin_name(county), "town": normalize_admin_name(town),
+            "totalVotes": total,
+            "candidates": [{"name":n,"party":v["party"],"votes":v["votes"],"share":round(v["votes"]/total*100,2) if total else 0} for n,v in rows]
+        }
+        for n,v in rows:
+            national[n]["party"] = v["party"]
+            national[n]["votes"] += v["votes"]
+
+    total = sum(v["votes"] for v in national.values())
+    national_rows = [{"name":n,"party":v["party"],"votes":v["votes"],"share":round(v["votes"]/total*100,2) if total else 0} for n,v in sorted(national.items(), key=lambda x:-x[1]["votes"])]
+    print(f"Aligned {kind} {year}: towns={len(output)}, unmatched_places={dropped}")
+    return {"year":year, "election":HISTORICAL_ELECTION_NAMES.get(year) if kind=="president" else MAYOR_ELECTION_NAMES.get(year), "national":{"totalVotes":total,"candidates":national_rows}, "towns":output}
+
+def build_historical_data(town_map):
+    presidents, mayors = {}, {}
+    # Build county lookup from each source's elbase before reading vote totals.
+    for kind, years in HISTORICAL_SOURCES.items():
+        for year, dirs in years.items():
+            found = None
+            for dirname in dirs:
+                p = Path("/tmp/cec/voteData") / dirname
+                if p.exists():
+                    found = p
+                    break
+            if not found:
+                raise FileNotFoundError(f"CEC source not found for {kind} {year}: {dirs}")
+            # Inject a county-code lookup used by the generic parser.
+            global county_lookup
+            county_lookup = {}
+            for row in read_csv_rows(found / "elbase.csv"):
+                if len(row) < 6:
+                    continue
+                prv, city, level, area, li, name = row[:6]
+                if area == "000" and li == "0000":
+                    county_lookup[(prv, city)] = normalize_admin_name(name)
+            result = aggregate_bulk_election(found, town_map, kind, year)
+            (presidents if kind=="president" else mayors)[year] = result
+    return presidents, mayors
+\nimport argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--town-map", default="")
+args = parser.parse_args()
+town_map = load_current_town_map(args.town_map)
+presidents, mayors = build_historical_data(town_map)
+
 president_2024 = aggregate_village_results("2024總統")
 president_2020 = aggregate_village_results("2020總統")
 mayor_towns_2022 = aggregate_mayor_towns()
@@ -349,7 +540,7 @@ payload = {
         **president_2020,
         "stats": OFFICIAL_PRESIDENT_HISTORY[2020]
     },
-    "presidentHistory": OFFICIAL_PRESIDENT_HISTORY,
+    "presidentHistory": OFFICIAL_PRESIDENT_HISTORY,\n    "presidents": presidents,\n    "mayors": mayors,\n    "availableYears": {"president": sorted(presidents.keys()), "mayor": sorted(mayors.keys())},
     "partylist": {
         "year": 2024,
         "election": "第11屆立法委員全國不分區及僑居國外國民選舉",
