@@ -487,6 +487,8 @@ def build_historical_data(town_map):
     # Build county lookup from each source's elbase before reading vote totals.
     for kind, years in HISTORICAL_SOURCES.items():
         for year, dirs in years.items():
+            if not dirs:
+                continue
             found = None
             for dirname in dirs:
                 p = Path("/tmp/cec/voteData") / dirname
