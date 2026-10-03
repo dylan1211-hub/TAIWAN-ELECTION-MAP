@@ -507,7 +507,7 @@ def build_historical_data(town_map):
             result = aggregate_bulk_election(found, town_map, kind, year)
             (presidents if kind=="president" else mayors)[year] = result
     return presidents, mayors
-\nimport argparse
+import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--town-map", default="")
