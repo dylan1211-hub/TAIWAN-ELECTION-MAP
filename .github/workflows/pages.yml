@@ -52,6 +52,22 @@ jobs:
           curl -L "https://taiwanvotes.tw/data/csv/%E7%B8%A3%E5%B8%82%E9%95%B7_2022_%E5%98%89%E7%BE%A9%E5%B8%82.csv?v=20260803111705" -o /tmp/chiayi_mayor_2022.csv
           python3 scripts/build_election_data.py --town-map /tmp/towns-10t.json
           python3 - <<'PY'
+          import json
+          data=json.load(open("data/elections.json",encoding="utf-8"))
+          for kind in ("president","mayor"):
+              years=data["availableYears"][kind]
+              print(kind, "years:", years)
+              for year in years:
+                  ds=data["presidents" if kind=="president" else "mayors"][str(year)]
+                  towns=len(ds.get("towns",{}))
+                  candidates=len(ds.get("national",{}).get("candidates",[]))
+                  print(f"  {year}: towns={towns}, national_candidates={candidates}")
+                  if kind=="president" and candidates < 2:
+                      raise SystemExit(f"Invalid presidential data: {year}")
+                  if kind=="mayor" and towns < 100:
+                      raise SystemExit(f"Suspiciously incomplete mayor town alignment: {year} ({towns})")
+          PY
+          python3 - <<'PY'
           import csv, json
           from collections import defaultdict
           path="/tmp/chiayi_mayor_2022.csv"
