@@ -29,7 +29,7 @@ jobs:
           rm -rf /tmp/cec
           git clone --depth 1 --filter=blob:none --sparse https://github.com/kiang/db.cec.gov.tw.git /tmp/cec
           cd /tmp/cec
-          git sparse-checkout set data/elections/2020-2024 data/2018
+          git sparse-checkout set data/elections/2020-2024 data/2018 data/2022
           cd "$GITHUB_WORKSPACE"
           python3 scripts/build_election_data.py
 
