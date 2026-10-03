@@ -135,7 +135,12 @@ function datasetFor(type,year){
 }
 function prepareDataset(ds){
   if(!ds)return ds;
-  ds._townLookup=ds.towns||{};
+  const firstKey=Object.keys(ds.towns||{})[0]||"";
+  if(activeKey==="president" && firstKey.length>8){
+    ds._townLookup=buildTownLookup(ds);
+  }else{
+    ds._townLookup=ds.towns||{};
+  }
   return ds;
 }
 
