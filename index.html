@@ -92,8 +92,14 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
   <div class="metric"><span>有效票</span><span id="validVotes">—</span></div>
   <div class="metric"><span>投票率</span><span id="turnout">待接入</span></div>
 
-  <div class="section-title">候選人得票比例</div>
+  <div class="section-title">候選人得票</div>
   <div id="candidates"></div>
+
+  <div class="section-title">得票率構成</div>
+  <div class="pie-wrap">
+    <div class="pie" id="pie"><div class="pie-center">候選人<br>得票</div></div>
+    <div class="pie-legend" id="pieLegend"></div>
+  </div>
 
   <div class="section-title">政黨色彩圖例</div>
   <div class="legend">
@@ -257,6 +263,7 @@ function hideTownTooltip(){
 function renderPie(data){
   const rows=data?.candidates||[];
   const pie=$("pie"),legend=$("pieLegend");
+  if(!pie||!legend)return;
   if(!rows.length){pie.style.background="var(--panel2)";legend.innerHTML="";return;}
   let start=0,segments=[];
   rows.forEach(x=>{const end=start+x.share;segments.push(partyColor(x.party)+" "+start+"% "+end+"%");start=end;});
