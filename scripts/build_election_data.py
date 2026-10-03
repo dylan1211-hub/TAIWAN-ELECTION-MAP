@@ -6,6 +6,7 @@ from collections import defaultdict
 SRC = Path("/tmp/cec/data/elections/2020-2024")
 SRC_2018 = Path("/tmp/cec/data/2018/縣市長.csv")
 SRC_2022 = Path("/tmp/cec/data/2022/縣市長.csv")
+LOCAL_MAYOR = Path("/tmp/local-election-dataset/data/candidate_vote")
 OUT = Path("data/elections.json")
 OUT.parent.mkdir(parents=True, exist_ok=True)
 
@@ -156,6 +157,58 @@ OFFICIAL_PARTYLIST_2024 = [
     {"name":"親民黨","party":"親民黨","votes":69818,"share":0.51}
 ]
 
+def aggregate_mayor_towns():
+    """Build 2022 county-mayor results at township/district scale from published CEC-derived tables."""
+    if not LOCAL_MAYOR.exists():
+        return {}
+    party_by_candidate = {}
+    if SRC_2022.exists():
+        with SRC_2022.open("r", encoding="utf-8-sig", newline="") as f:
+            for row in csv.DictReader(f):
+                name=(row.get("cand_name") or "").strip()
+                party=normalize_party(row.get("party",""))
+                if name: party_by_candidate[name]=party
+
+    county_map={
+        "Changhua":"彰化縣","Chiayi":"嘉義縣","Hsinchu":"新竹縣","Hualien":"花蓮縣",
+        "Keelung":"基隆市","Kinmen":"金門縣","Lienchiang":"連江縣","Miaoli":"苗栗縣",
+        "Nantou":"南投縣","Penghu":"澎湖縣","Pingtung":"屏東縣","Taitung":"臺東縣",
+        "Yilan":"宜蘭縣","Yunlin":"雲林縣","Kaohsiung":"高雄市","Newtaipei":"新北市",
+        "Taichung":"臺中市","Tainan":"臺南市","Taipei":"臺北市","Taoyuan":"桃園市",
+        "Hsinchu-city":"新竹市"
+    }
+    towns={}
+    for p in LOCAL_MAYOR.rglob("*_2022_poll_statistics.csv"):
+        stem=p.stem.replace("_2022_poll_statistics","")
+        key=stem.replace("city_","")
+        county=county_map.get(key)
+        if not county: continue
+        with p.open("r",encoding="utf-8-sig",newline="") as f:
+            rows=list(csv.reader(f))
+        if not rows or len(rows)<2: continue
+        headers=rows[0][1:-1]
+        for row in rows[1:]:
+            if not row: continue
+            name=row[0].strip()
+            party=party_by_candidate.get(name,normalize_party(""))
+            for idx,town in enumerate(headers,1):
+                if idx>=len(row): continue
+                try: votes=int(str(row[idx]).replace(",","") or 0)
+                except: votes=0
+                code=f"mayor-{county}-{town}"
+                bucket=towns.setdefault(code,{"county":county,"town":town,"candidates":defaultdict(lambda:{"party":"","votes":0})})
+                bucket["candidates"][name]["party"]=party
+                bucket["candidates"][name]["votes"]+=votes
+    output={}
+    for code,item in towns.items():
+        rows=sorted(item["candidates"].items(),key=lambda x:-x[1]["votes"])
+        total=sum(v["votes"] for _,v in rows)
+        output[code]={"county":item["county"],"town":item["town"],"totalVotes":total,
+                      "candidates":[{"name":n,"party":v["party"],"votes":v["votes"],
+                                    "share":round(v["votes"]/total*100,2) if total else 0}
+                                   for n,v in rows]}
+    return output
+
 def aggregate_mayor_csv(source_path):
     national = defaultdict(lambda: {"party": "", "votes": 0})
     counties = {}
@@ -194,6 +247,7 @@ def aggregate_mayor_csv(source_path):
 
 president_2024 = aggregate_village_results("2024總統")
 president_2020 = aggregate_village_results("2020總統")
+mayor_towns_2022 = aggregate_mayor_towns()
 partylist_2024 = aggregate_partylist()
 president_2024["national"] = {"totalVotes": OFFICIAL_PRESIDENT_HISTORY[2024]["validVotes"], "candidates": OFFICIAL_PRESIDENT_HISTORY[2024]["candidates"]}
 president_2020["national"] = {"totalVotes": OFFICIAL_PRESIDENT_HISTORY[2020]["validVotes"], "candidates": OFFICIAL_PRESIDENT_HISTORY[2020]["candidates"]}
@@ -225,7 +279,8 @@ payload = {
     "mayor": {
         "year": 2022,
         "election": "111年直轄市長、縣市長選舉",
-        **aggregate_mayor_csv(SRC_2022)
+        **aggregate_mayor_csv(SRC_2022),
+        "towns": mayor_towns_2022
     },
     "mayor2018": {
         "year": 2018,
