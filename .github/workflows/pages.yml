@@ -29,12 +29,28 @@ jobs:
           rm -rf /tmp/cec
           git clone --depth 1 --filter=blob:none --sparse https://github.com/kiang/db.cec.gov.tw.git /tmp/cec
           cd /tmp/cec
-          git sparse-checkout set data/elections/2020-2024 data/2018 data/2022 voteData/2022-111年地方公職人員選舉/C1
+          git sparse-checkout set data/elections/2020-2024 data/2018 data/2022 \
+            voteData/9任總統 \
+            voteData/1997縣市長 \
+            voteData/2000年10任總統 \
+            voteData/2001縣市長 \
+            voteData/2004   11任總統 \
+            voteData/2005縣市長 \
+            voteData/2008 12任總統 \
+            voteData/2009* \
+            voteData/20120114-總統及立委 \
+            voteData/2014-103年地方公職人員選舉 \
+            voteData/2016總統立委 \
+            voteData/2018-107年地方公職人員選舉 \
+            voteData/2020總統立委 \
+            voteData/2022-111年地方公職人員選舉/C1 \
+            voteData/2024總統立委
           rm -rf /tmp/local-election-dataset
           git clone --depth 1 https://github.com/LiuYuWei/2022-local-election-dataset.git /tmp/local-election-dataset
           cd "$GITHUB_WORKSPACE"
+          curl -L "https://cdn.jsdelivr.net/npm/taiwan-atlas@2021.9.20/towns-10t.json" -o /tmp/towns-10t.json
           curl -L "https://taiwanvotes.tw/data/csv/%E7%B8%A3%E5%B8%82%E9%95%B7_2022_%E5%98%89%E7%BE%A9%E5%B8%82.csv?v=20260803111705" -o /tmp/chiayi_mayor_2022.csv
-          python3 scripts/build_election_data.py
+          python3 scripts/build_election_data.py --town-map /tmp/towns-10t.json
           python3 - <<'PY'
           import csv, json
           from collections import defaultdict
