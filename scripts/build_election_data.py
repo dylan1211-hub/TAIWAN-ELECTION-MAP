@@ -1,5 +1,4 @@
 import csv
-import csv
 import json
 from pathlib import Path
 from collections import defaultdict
@@ -139,6 +138,13 @@ def aggregate_partylist():
     ]
     return {"national": {"totalVotes": national_total, "parties": national_rows}, "towns": output}
 
+OFFICIAL_PRESIDENT_HISTORY = {
+    2012: {"year":2012,"election":"第13任總統副總統選舉","electors":18086455,"votes":13452016,"validVotes":13354305,"invalidVotes":97711,"turnout":74.38,"candidates":[{"name":"馬英九","party":"中國國民黨","votes":6891139,"share":51.60},{"name":"蔡英文","party":"民主進步黨","votes":6093578,"share":45.63},{"name":"宋楚瑜","party":"親民黨","votes":369588,"share":2.77}]},
+    2016: {"year":2016,"election":"第14任總統副總統選舉","electors":18782991,"votes":12448302,"validVotes":12284970,"invalidVotes":163332,"turnout":66.27,"candidates":[{"name":"蔡英文","party":"民主進步黨","votes":6894744,"share":56.12},{"name":"朱立倫","party":"中國國民黨","votes":3813365,"share":31.04},{"name":"宋楚瑜","party":"親民黨","votes":1576861,"share":12.83}]},
+    2020: {"year":2020,"election":"第15任總統副總統選舉","electors":19311105,"votes":14464571,"validVotes":14300940,"invalidVotes":163631,"turnout":74.90,"candidates":[{"name":"蔡英文","party":"民主進步黨","votes":8170231,"share":57.13},{"name":"韓國瑜","party":"中國國民黨","votes":5522119,"share":38.61},{"name":"宋楚瑜","party":"親民黨","votes":608590,"share":4.26}]},
+    2024: {"year":2024,"election":"第16任總統副總統選舉","electors":19548531,"votes":14048310,"validVotes":13947506,"invalidVotes":100804,"turnout":71.86,"candidates":[{"name":"賴清德","party":"民主進步黨","votes":5586019,"share":40.05},{"name":"侯友宜","party":"中國國民黨","votes":4671021,"share":33.49},{"name":"柯文哲","party":"台灣民眾黨","votes":3690466,"share":26.46}]}
+}
+
 def aggregate_mayor_csv(source_path):
     national = defaultdict(lambda: {"party": "", "votes": 0})
     counties = {}
@@ -175,6 +181,11 @@ def aggregate_mayor_csv(source_path):
     ]
     return {"national": {"totalVotes": total, "candidates": national_rows}, "counties": counties}
 
+president_2024 = aggregate_village_results("2024總統")
+president_2020 = aggregate_village_results("2020總統")
+president_2024["national"] = {"totalVotes": OFFICIAL_PRESIDENT_HISTORY[2024]["validVotes"], "candidates": OFFICIAL_PRESIDENT_HISTORY[2024]["candidates"]}
+president_2020["national"] = {"totalVotes": OFFICIAL_PRESIDENT_HISTORY[2020]["validVotes"], "candidates": OFFICIAL_PRESIDENT_HISTORY[2020]["candidates"]}
+
 payload = {
     "meta": {
         "source": "中央選舉委員會公開選舉資料",
@@ -183,13 +194,16 @@ payload = {
     "president": {
         "year": 2024,
         "election": "第16任總統副總統選舉",
-        **aggregate_village_results("2024總統")
+        **president_2024,
+        "stats": OFFICIAL_PRESIDENT_HISTORY[2024]
     },
     "president2020": {
         "year": 2020,
         "election": "第15任總統副總統選舉",
-        **aggregate_village_results("2020總統")
+        **president_2020,
+        "stats": OFFICIAL_PRESIDENT_HISTORY[2020]
     },
+    "presidentHistory": OFFICIAL_PRESIDENT_HISTORY,
     "partylist": {
         "year": 2024,
         "election": "第11屆立法委員全國不分區及僑居國外國民選舉",
