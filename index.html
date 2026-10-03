@@ -180,7 +180,7 @@ function clearSelection(){
 function aggregate(features){
   const rows={};
   for(const f of features){
-    const d=electionData?.towns?.[f.properties.TOWNCODE];
+    const d=townResult(f.properties.TOWNCODE);
     if(!d)continue;
     for(const c of d.candidates){
       const key=c.name;
@@ -207,7 +207,7 @@ function applyElectionColors(){
 }
 
 function showTownTooltip(e,d){
-  const row=electionData?.towns?.[d.properties.TOWNCODE];
+  const row=townResult(d.properties.TOWNCODE);
   if(!row?.candidates?.length)return;
   const candidates=[...row.candidates].sort((a,b)=>b.votes-a.votes);
   const total=candidates.reduce((s,x)=>s+x.votes,0);
@@ -293,7 +293,7 @@ function selectTown(d){
   updateTownMenu(d.properties.COUNTYCODE);
   $("town").value=selectedCode;
   zoomTo([d]);
-  updatePanel(d.properties.COUNTYNAME+"・"+d.properties.TOWNNAME,electionData?.towns?.[selectedCode]);
+  updatePanel(d.properties.COUNTYNAME+"・"+d.properties.TOWNNAME,townResult(selectedCode));
 }
 
 $("county").onchange=e=>selectCountyByCode(e.target.value);
@@ -318,6 +318,7 @@ Promise.all([
   fetch(DATA_URL).then(r=>{if(!r.ok)throw new Error("選舉資料 HTTP "+r.status);return r.json()})
 ]).then(([topo,data])=>{
   electionData=data;
+  electionData._townLookup=buildTownLookup();
   setup(topo);
 }).catch(err=>{
   console.error("Taiwan election map error:",err);
