@@ -236,7 +236,7 @@ def aggregate_mayor_towns():
                 prv, city, level, area, li, dept, cand_no = [x.strip() for x in row[:7]]
                 if not cand_no.isdigit():
                     continue
-                place = place_lookup.get((prv, city, area))
+                place = place_lookup.get((prv, city, level, area))
                 candidate = candidate_lookup.get((prv, city, cand_no))
                 if not place or not candidate:
                     continue
