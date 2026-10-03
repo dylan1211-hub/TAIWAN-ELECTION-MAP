@@ -33,37 +33,7 @@ jobs:
           rm -rf /tmp/local-election-dataset
           git clone --depth 1 https://github.com/LiuYuWei/2022-local-election-dataset.git /tmp/local-election-dataset
           cd "$GITHUB_WORKSPACE"
-          curl -L "https://taiwanvotes.tw/data/csv/%E7%B8%A3%E5%B8%82%E9%95%B7_2022_%E5%98%89%E7%BE%A9%E5%B8%82.csv?v=20260803111705" -o /tmp/chiayi_mayor_2022.csv
           python3 scripts/build_election_data.py
-          python3 - <<'PY'
-          import csv, json
-          from collections import defaultdict
-          path="/tmp/chiayi_mayor_2022.csv"
-          out="data/elections.json"
-          towns={}
-          with open(path,encoding="utf-8-sig",newline="") as f:
-              for r in csv.DictReader(f):
-                  if r.get("縣市")!="嘉義市" or r.get("鄉鎮市區") not in ("東區","西區"):
-                      continue
-                  name=(r.get("候選人") or "").strip()
-                  if not name:
-                      continue
-                  try: votes=int((r.get("得票數") or "0").replace(",",""))
-                  except: votes=0
-                  key=f"mayor-嘉義市-{r['鄉鎮市區']}"
-                  b=towns.setdefault(key,{"county":"嘉義市","town":r["鄉鎮市區"],"candidates":defaultdict(lambda:{"party":"","votes":0})})
-                  b["candidates"][name]["party"]=r.get("政黨") or "無黨籍／其他"
-                  b["candidates"][name]["votes"]+=votes
-          for b in towns.values():
-              rows=sorted(b["candidates"].items(),key=lambda x:-x[1]["votes"])
-              total=sum(v["votes"] for _,v in rows)
-              b["totalVotes"]=total
-              b["candidates"]=[{"name":n,"party":v["party"],"votes":v["votes"],"share":round(v["votes"]/total*100,2) if total else 0} for n,v in rows]
-          with open(out,encoding="utf-8") as f: data=json.load(f)
-          data["mayor"]["towns"].update(towns)
-          with open(out,"w",encoding="utf-8") as f: json.dump(data,f,ensure_ascii=False,separators=(",",":"))
-          print("Chiayi mayor districts:", len(towns))
-          PY
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
