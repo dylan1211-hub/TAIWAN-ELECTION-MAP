@@ -141,6 +141,11 @@ payload = {
         "election": "第16任總統副總統選舉",
         **aggregate_village_results("2024總統")
     },
+    "president2020": {
+        "year": 2020,
+        "election": "第15任總統副總統選舉",
+        **aggregate_village_results("2020總統")
+    },
     "partylist": {
         "year": 2024,
         "election": "第11屆立法委員全國不分區及僑居國外國民選舉",
