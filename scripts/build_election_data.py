@@ -436,7 +436,7 @@ def aggregate_bulk_election(source_dir, town_map, kind, year):
         prv, city, level, area, li, dept, cand_no = row[:7]
         if not cand_no.isdigit():
             continue
-        place = place_lookup.get((prv, city, level, area))
+        place = place_lookup.get((prv, city, area))
         cand = candidate_lookup.get((prv, city, cand_no))
         if not place or not cand:
             continue
