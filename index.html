@@ -96,7 +96,7 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
   <div class="section-title" id="partylistTitle">2024 不分區政黨票</div>
   <div class="mini-chart" id="partylistChart"></div>
 
-  <div class="source">資料來源：中央選舉委員會公開選舉資料。總統與不分區資料彙整至鄉鎮市區；縣市長資料以縣市為統計層級。</div>
+  <div class="source">資料來源：中央選舉委員會公開選舉資料。總統與不分區資料彙整至鄉鎮市區；縣市長資料彙整至鄉鎮市區層級。</div>
 </aside>
 <section class="history-panel" id="historyPanel">
   <div class="history-card" id="historyCardOverview">
@@ -509,21 +509,6 @@ function renderMayorHistory(){
   },true);
 }
 
-function renderCandidates(data){
-  const box=$("candidates");
-  if(!data?.candidates?.length){
-    box.innerHTML='<div class="empty">目前選取範圍沒有可用的選舉票數資料。</div>';
-    return;
-  }
-  box.innerHTML=data.candidates.map(x=>{
-    const color=partyColor(x.party);
-    return '<div class="candidate">'+
-      '<div class="candidate-head"><div><div class="candidate-name">'+x.name+'</div><div class="candidate-party">'+x.party+'</div></div>'+
-      '<div class="candidate-value">'+fmt(x.votes)+'　'+x.share.toFixed(2)+'%</div></div>'+
-      '</div>';
-  }).join("");
-}
-
 function updatePanel(name,data){
   $("place").textContent=name;
   $("validVotes").textContent=data?fmt(data.totalVotes):"—";
@@ -531,7 +516,6 @@ function updatePanel(name,data){
   $("dataLevel").textContent="資料層級："+(name==="全臺"?"全臺":(activeKey==="mayor"?"縣市":"鄉鎮市區"));
   const panelData=data||activeDataset?.national;
   renderRegionKpis(panelData);
-  renderCandidates(panelData);
   renderPie(panelData);
   const partyData=selectedFeatures.length>1?aggregatePartylist(selectedFeatures):(partyTownResult(selectedCode)||electionData?.partylist?.national);
   renderPartylist(partyData);
