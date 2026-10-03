@@ -10,15 +10,15 @@
 <style>
 :root{--bg:#070b12;--panel:#0d131d;--panel2:#111a26;--line:#263242;--text:#e7edf5;--muted:#8190a4;--cyan:#67d5ff}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,"Noto Sans TC",system-ui,sans-serif;overflow:hidden}
-.app{height:100vh;display:grid;grid-template-columns:280px 1fr 370px}
-.side,.right{background:var(--panel);padding:22px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,"Noto Sans TC",system-ui,sans-serif;overflow:auto}
+.app{min-height:100vh;display:grid;grid-template-columns:280px minmax(0,1fr) 370px;grid-template-rows:minmax(660px,1fr) 300px}
+.side,.right{background:var(--panel);padding:22px;min-height:0}
 .side{border-right:1px solid var(--line);overflow:auto}
 .right{border-left:1px solid var(--line);overflow:auto}
 h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);font-size:12px;margin-bottom:25px}
 .label{font-size:11px;color:var(--muted);margin:18px 0 7px}
 .select{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px}
-.map{position:relative;min-width:0}.mapbar{position:absolute;z-index:3;left:20px;top:18px;background:#0d131dcc;border:1px solid var(--line);border-radius:9px;padding:8px 12px;color:var(--muted);font-size:12px}
+.map{position:relative;min-width:0;min-height:0}.mapbar{position:absolute;z-index:3;left:20px;top:18px;background:#0d131dcc;border:1px solid var(--line);border-radius:9px;padding:8px 12px;color:var(--muted);font-size:12px}
 .map svg{width:100%;height:100%;display:block}.map-legend{position:absolute;left:20px;bottom:18px;z-index:3;width:230px;background:#0d131de8;border:1px solid var(--line);border-radius:10px;padding:12px 13px;backdrop-filter:blur(8px);box-shadow:0 10px 25px #0005}.map-legend-title{font-size:11px;font-weight:650;margin-bottom:9px}.map-legend-sub{font-size:10px;color:var(--muted);margin-bottom:8px}.opacity-ramp{height:9px;border-radius:99px;background:linear-gradient(to right,rgba(103,213,255,.24),rgba(103,213,255,1));border:1px solid #3b4655}.opacity-ticks{display:flex;justify-content:space-between;color:var(--muted);font-size:9px;margin-top:4px}.party-ramp{height:7px;border-radius:99px;border:1px solid #3b4655}.party-ramp.dpp{background:linear-gradient(to right,rgba(27,158,63,.24),rgba(27,158,63,1))}.party-ramp.kmt{background:linear-gradient(to right,rgba(47,111,214,.24),rgba(47,111,214,1))}.party-ramp.tpp{background:linear-gradient(to right,rgba(25,167,206,.24),rgba(25,167,206,1))}.ramp-row{display:grid;grid-template-columns:66px 1fr;align-items:center;gap:8px;margin:5px 0}.ramp-name{font-size:9px;color:var(--muted)}.map-legend-note{font-size:9px;color:var(--muted);margin-top:9px;line-height:1.45}
 .town{fill:#121b27;stroke:#344152;stroke-width:.42;cursor:pointer;transition:fill .15s}
 .town:hover{fill:#24364a}
@@ -42,8 +42,8 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
 .bar-fill{height:100%;border-radius:99px}
 .legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;color:var(--muted);font-size:11px}
 .legend-item{display:flex;align-items:center;gap:5px}.dot{width:8px;height:8px;border-radius:50%}
-.source{margin-top:20px;color:var(--muted);font-size:10px;line-height:1.6}.chart-box{height:190px;width:100%}.mini-chart{height:165px;width:100%}.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.kpi-card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px}.kpi-label{font-size:9px;color:var(--muted)}.kpi-value{font-size:16px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}.module-hidden{display:none}.pie-wrap{display:block}.pie-legend{display:none}
-.hint{margin-top:20px;color:var(--muted);font-size:12px;line-height:1.7}
+.source{margin-top:20px;color:var(--muted);font-size:10px;line-height:1.6}.chart-box{height:190px;width:100%}.mini-chart{height:165px;width:100%}.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.kpi-card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px}.kpi-label{font-size:9px;color:var(--muted)}.kpi-value{font-size:16px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}.module-hidden{display:none}.pie-wrap{display:none}.pie-legend{display:none}
+.hint{margin-top:20px;color:var(--muted);font-size:12px;line-height:1.7}.history-panel{grid-column:1 / -1;grid-row:2;background:var(--panel);border-top:1px solid var(--line);padding:18px 22px;display:grid;grid-template-columns:1.05fr 1fr 1.7fr;gap:16px;min-height:0}.history-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}.history-title{font-size:14px;font-weight:700}.history-sub{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5}.history-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0;overflow:hidden}.history-chart{height:220px;width:100%}.history-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.history-year-card{border:1px solid var(--line);border-radius:8px;padding:9px;background:#0d151f}.history-year{font-size:10px;color:var(--muted)}.history-winner{font-size:13px;font-weight:700;margin-top:4px}.history-meta{font-size:10px;color:#9aa8ba;margin-top:3px}.history-stat{font-size:10px;color:var(--muted);margin-top:7px}.right-summary{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0 4px}.right-summary .kpi-card{padding:9px}.data-level{font-size:10px;color:var(--muted);margin:7px 0 12px}.section-title{font-size:11px;color:var(--muted);margin:18px 0 8px}
 .badge{display:inline-block;padding:3px 7px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:10px;margin-bottom:12px}
 .empty{color:var(--muted);font-size:12px;line-height:1.7;padding:12px 0}
 .tooltip{position:fixed;z-index:20;pointer-events:none;min-width:230px;background:#0b111aee;border:1px solid #3a485b;border-radius:9px;padding:11px 12px;box-shadow:0 12px 35px #0008;backdrop-filter:blur(8px);display:none}.tooltip-title{font-size:14px;font-weight:650;margin-bottom:8px}.tooltip-row{display:grid;grid-template-columns:1fr auto;gap:12px;font-size:11px;padding:4px 0}.tooltip-party{color:var(--muted)}.tooltip-share{font-variant-numeric:tabular-nums;font-weight:650}
@@ -86,39 +86,44 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
   <div class="place" id="place">全臺</div>
   <div class="badge" id="dataBadge">2024 總統副總統</div>
 
-  <div class="metric"><span>選舉</span><span id="metricElection">總統副總統</span></div>
-  <div class="metric"><span>年份</span><span id="metricYear">2024</span></div>
   <div class="metric"><span>有效票</span><span id="validVotes">—</span></div>
-  <div class="metric"><span>投票率</span><span id="turnout">待接入</span></div>
+  <div class="data-level" id="dataLevel">資料層級：全臺</div>
+  <div class="right-summary" id="regionKpis"></div>
 
-  <div class="kpi-grid" id="regionKpis"></div>
-
+  <div class="section-title">候選組得票</div>
   <div id="candidates"></div>
-  <div class="pie-wrap">
-    <div class="chart-box" id="voteShareChart" aria-label="候選人得票率構成圖"></div>
-  </div>
 
-  <div class="section-title" id="partylistTitle">不分區政黨票</div>
+  <div class="section-title" id="partylistTitle">2024 不分區政黨票</div>
   <div class="mini-chart" id="partylistChart"></div>
 
-  <div class="section-title" id="trendTitle">歷年政黨得票率</div>
-  <div class="mini-chart" id="trendChart"></div>
-
-  <div class="section-title">政黨色彩圖例</div>
+  <div class="section-title">政黨色彩</div>
   <div class="legend">
     <div class="legend-item"><span class="dot" style="background:#1b9e3f"></span>民主進步黨</div>
     <div class="legend-item"><span class="dot" style="background:#2f6fd6"></span>中國國民黨</div>
     <div class="legend-item"><span class="dot" style="background:#19a7ce"></span>台灣民眾黨</div>
-    <div class="legend-item"><span class="dot" style="background:#738196"></span>無黨籍／其他</div>
+    <div class="legend-item"><span class="dot" style="background:#738196"></span>其他</div>
   </div>
 
-  <div class="source">資料來源：中央選舉委員會公開選舉資料。資料處理將村里層級票數彙整至鄉鎮市區，以供本平台地圖展示。</div>
+  <div class="source">資料來源：中央選舉委員會公開選舉資料。總統與不分區資料彙整至鄉鎮市區；縣市長資料以縣市為統計層級。</div>
 </aside>
-</div>
+<section class="history-panel" id="historyPanel">
+  <div class="history-card">
+    <div class="history-head"><div><div class="history-title">歷屆選舉概況</div><div class="history-sub">2012–2024 全國總統副總統選舉</div></div></div>
+    <div class="history-cards" id="historyCards"></div>
+  </div>
+  <div class="history-card">
+    <div class="history-head"><div><div class="history-title">歷屆投票率</div><div class="history-sub">選舉人數與實際投票比例</div></div></div>
+    <div class="history-chart" id="historyTurnoutChart"></div>
+  </div>
+  <div class="history-card">
+    <div class="history-head"><div><div class="history-title">歷屆候選組得票率</div><div class="history-sub">以政黨／候選組呈現，缺席年份不連線</div></div></div>
+    <div class="history-chart" id="historyShareChart"></div>
+  </div>
+</section></div>
 
 <script>
 const $=id=>document.getElementById(id),svg=d3.select("#svg");
-let g,zoom,towns=[],projection,path,selectedCode=null,electionData=null,voteShareChart=null,partyChartInstance=null,trendChartInstance=null;
+let g,zoom,towns=[],projection,path,selectedCode=null,electionData=null,voteShareChart=null,partyChartInstance=null,trendChartInstance=null,historyTurnoutChartInstance=null,historyShareChartInstance=null;
 
 const MAP_URL="https://cdn.jsdelivr.net/npm/taiwan-atlas@2021.9.20/towns-10t.json";
 const DATA_URL="data/elections.json";
@@ -392,13 +397,12 @@ function renderPie(data){
 function renderRegionKpis(data){
   const box=$("regionKpis");
   if(!box)return;
-  if(!data){box.innerHTML="";return;}
-  const leader=data.candidates?.[0];
+  const leader=data?.candidates?.[0];
   box.innerHTML=[
-    ["有效票",fmt(data.totalVotes)],
-    ["候選人數",(data.candidates||[]).length+" 組"],
-    ["最高得票",leader?leader.name:"—"],
-    ["最高得票率",leader?leader.share.toFixed(2)+"%":"—"]
+    ["候選組數",(data?.candidates||[]).length+" 組"],
+    ["最高得票率",leader?leader.share.toFixed(2)+"%":"—"],
+    ["最高票數",leader?fmt(leader.votes):"—"],
+    ["資料範圍",$("place").textContent==="全臺"?"全臺":"選取區域"]
   ].map(x=>'<div class="kpi-card"><div class="kpi-label">'+x[0]+'</div><div class="kpi-value">'+x[1]+'</div></div>').join("");
 }
 function renderPartylist(data){
@@ -427,57 +431,46 @@ function normalizeParty(p){
   if(!v || v==="無" || v==="無黨籍及未經政黨推薦")return "無黨籍／其他";
   return v;
 }
-function renderPresidentTrend(code){
-  const el=$("trendChart"),title=$("trendTitle");
-  const current=code?townResult(code):(selectedFeatures.length>1?aggregate(selectedFeatures):electionData?.president?.national);
-  const previous=code?historyResult(code):(selectedFeatures.length>1?aggregateHistory(selectedFeatures):electionData?.president2020?.national);
-  if(!current||!previous){el.innerHTML='<div class="empty">歷年資料不足。</div>';return;}
-  title.textContent="歷年政黨得票率";
-  const parties=["民主進步黨","中國國民黨","台灣民眾黨"];
-  const a=partyShares(previous,parties),b=partyShares(current,parties);
-  if(!trendChartInstance)trendChartInstance=echarts.init(el,"dark");
-  trendChartInstance.setOption({
-    animationDuration:450,
-    grid:{left:32,right:10,top:15,bottom:24},
-    xAxis:{type:"category",data:["2020","2024"],axisLabel:{color:"#8190a4",fontSize:9}},
-    yAxis:{type:"value",min:0,max:100,axisLabel:{color:"#8190a4",fontSize:9,formatter:v=>v+"%"},splitLine:{lineStyle:{color:"#263242"}}},
-    tooltip:{trigger:"axis",backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},valueFormatter:v=>Number(v).toFixed(2)+"%"},
-    legend:{show:false},
-    series:parties.map((p,i)=>({name:p,type:"line",smooth:true,symbol:"circle",symbolSize:5,data:[a[i].share,b[i].share],lineStyle:{width:2,color:partyColor(p)},itemStyle:{color:partyColor(p)}}))
-  },true);
-}
-function renderMayorTrend(){
-  const el=$("trendChart"),title=$("trendTitle");
-  title.textContent="2018 → 2022 政黨得票率";
-  if(!electionData?.mayor2018){el.innerHTML='<div class="empty">尚未載入 2018 年縣市長資料。</div>';return;}
-  if(selectedFeatures.length===1){
-    el.innerHTML='<div class="empty">歷史資料目前為縣市層級；選取縣市或全臺後可比較 2018 → 2022。</div>';
+function renderHistory(){
+  const panel=$("historyPanel");
+  if(!panel)return;
+  if(activeKey!=="president"){
+    renderMayorHistory();
     return;
   }
-  const countyName=selectedFeatures.length===towns.length?"全臺":selectedFeatures[0]?.properties.COUNTYNAME;
-  const previous=countyName==="全臺"?electionData.mayor2018.national:electionData.mayor2018.counties?.[countyName];
-  const current=selectedFeatures.length===towns.length?electionData.mayor.national:aggregate(selectedFeatures);
-  if(!previous||!current){el.innerHTML='<div class="empty">目前範圍沒有可對應的 2018 年縣市長資料。</div>';return;}
-  const parties=["民主進步黨","中國國民黨","無黨籍／其他"];
-  const a=partyShares(previous,parties),b=partyShares(current,parties);
-  if(!trendChartInstance)trendChartInstance=echarts.init(el,"dark");
-  trendChartInstance.setOption({
-    animationDuration:450,
-    grid:{left:32,right:10,top:15,bottom:24},
-    xAxis:{type:"category",data:["2018","2022"],axisLabel:{color:"#8190a4",fontSize:9}},
-    yAxis:{type:"value",min:0,max:100,axisLabel:{color:"#8190a4",fontSize:9,formatter:v=>v+"%"},splitLine:{lineStyle:{color:"#263242"}}},
+  panel.querySelector(".history-sub").textContent="2012–2024 全國總統副總統選舉";
+  const history=electionData?.presidentHistory||{};
+  const years=[2012,2016,2020,2024];
+  const cards=$("historyCards");
+  cards.innerHTML=years.map(y=>{
+    const s=history[y];
+    const lead=s?.candidates?.[0];
+    return '<div class="history-year-card"><div class="history-year">'+y+'</div><div class="history-winner">'+(lead?.name||"—")+'</div><div class="history-meta">'+(lead?.party||"—")+'　'+(lead?.share?.toFixed(2)||"—")+'%</div><div class="history-stat">投票率 '+(s?.turnout?.toFixed(2)||"—")+'%</div><div class="history-stat">有效票 '+fmt(s?.validVotes||0)+'</div></div>';
+  }).join("");
+  if(!historyTurnoutChartInstance)historyTurnoutChartInstance=echarts.init($("historyTurnoutChart"),"dark");
+  historyTurnoutChartInstance.setOption({
+    animationDuration:450,grid:{left:34,right:12,top:12,bottom:26},
+    xAxis:{type:"category",data:years.map(String),axisLabel:{color:"#8190a4",fontSize:10}},
+    yAxis:{type:"value",min:55,max:80,axisLabel:{color:"#8190a4",fontSize:9,formatter:v=>v+"%"},splitLine:{lineStyle:{color:"#263242"}}},
     tooltip:{trigger:"axis",backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},valueFormatter:v=>Number(v).toFixed(2)+"%"},
-    legend:{show:false},
-    series:parties.map((p,i)=>({name:p,type:"line",smooth:true,symbol:"circle",symbolSize:5,data:[a[i].share,b[i].share],lineStyle:{width:2,color:partyColor(p)},itemStyle:{color:partyColor(p)}}))
+    series:[{type:"line",smooth:true,symbol:"circle",symbolSize:7,data:years.map(y=>history[y]?.turnout||null),lineStyle:{width:2,color:"#67d5ff"},itemStyle:{color:"#67d5ff"},areaStyle:{opacity:.08}}]
+  },true);
+  if(!historyShareChartInstance)historyShareChartInstance=echarts.init($("historyShareChart"),"dark");
+  const parties=["民主進步黨","中國國民黨","台灣民眾黨","親民黨"];
+  historyShareChartInstance.setOption({
+    animationDuration:450,grid:{left:34,right:20,top:12,bottom:26},
+    xAxis:{type:"category",data:years.map(String),axisLabel:{color:"#8190a4",fontSize:10}},
+    yAxis:{type:"value",min:0,max:65,axisLabel:{color:"#8190a4",fontSize:9,formatter:v=>v+"%"},splitLine:{lineStyle:{color:"#263242"}}},
+    tooltip:{trigger:"axis",backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},valueFormatter:v=>Number(v).toFixed(2)+"%"},
+    legend:{bottom:0,textStyle:{color:"#9aa8ba",fontSize:9},itemWidth:10,itemHeight:7},
+    series:parties.map(p=>({name:p,type:"line",smooth:true,symbol:"circle",symbolSize:5,data:years.map(y=>{const x=history[y]?.candidates?.find(c=>c.party===p);return x?x.share:null}),connectNulls:false,lineStyle:{width:2,color:partyColor(p)},itemStyle:{color:partyColor(p)}}))
   },true);
 }
-function renderTrend(code){
-  const el=$("trendChart"),title=$("trendTitle");
-  if(!el||!title)return;
-  if(activeKey!=="president"&&activeKey!=="mayor"){title.classList.add("module-hidden");el.classList.add("module-hidden");return;}
-  title.classList.remove("module-hidden");el.classList.remove("module-hidden");
-  if(activeKey==="mayor"){renderMayorTrend();return;}
-  renderPresidentTrend(code);
+function renderMayorHistory(){
+  const cards=$("historyCards");
+  cards.innerHTML='<div class="history-year-card"><div class="history-year">2018</div><div class="history-winner">縣市長</div><div class="history-meta">縣市層級資料</div></div><div class="history-year-card"><div class="history-year">2022</div><div class="history-winner">縣市長</div><div class="history-meta">縣市層級資料</div></div>';
+  $("historyTurnoutChart").innerHTML='<div class="empty">縣市長歷年投票率資料尚未納入。</div>';
+  $("historyShareChart").innerHTML='<div class="empty">可比較 2018 → 2022 的縣市長政黨得票率。</div>';
 }
 function renderCandidates(data){
   const box=$("candidates");
@@ -498,20 +491,17 @@ function renderCandidates(data){
 
 function updatePanel(name,data){
   $("place").textContent=name;
-  $("metricElection").textContent=$("electionType").selectedOptions[0].textContent;
-  $("metricYear").textContent=$("year").value;
   $("validVotes").textContent=data?fmt(data.totalVotes):"—";
   $("dataBadge").textContent=$("year").value+" "+$("electionType").selectedOptions[0].textContent;
+  $("dataLevel").textContent="資料層級："+(name==="全臺"?"全臺":(activeKey==="mayor"?"縣市":"鄉鎮市區"));
   const panelData=data||activeDataset?.national;
   renderRegionKpis(panelData);
   renderCandidates(panelData);
-  renderPie(panelData);
   const partyData=selectedFeatures.length>1?aggregatePartylist(selectedFeatures):(partyTownResult(selectedCode)||electionData?.partylist?.national);
   renderPartylist(partyData);
-  renderTrend(selectedCode);
+  renderHistory();
   $("status").textContent=name+"｜"+$("year").value+" "+$("electionType").selectedOptions[0].textContent;
 }
-
 function zoomTo(fs){
   if(!fs.length)return;
   const b=path.bounds({type:"FeatureCollection",features:fs});
@@ -586,6 +576,8 @@ window.addEventListener("resize",()=>{
   if(voteShareChart)voteShareChart.resize();
   if(partyChartInstance)partyChartInstance.resize();
   if(trendChartInstance)trendChartInstance.resize();
+  if(historyTurnoutChartInstance)historyTurnoutChartInstance.resize();
+  if(historyShareChartInstance)historyShareChartInstance.resize();
 });
 
 Promise.all([
