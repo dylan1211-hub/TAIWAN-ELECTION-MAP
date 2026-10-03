@@ -603,7 +603,7 @@ function selectCountyByCode(code){
   zoomTo(fs);
   const countyName=fs[0]?.properties.COUNTYNAME||"縣市";
   const data=activeKey==="mayor"
-    ? activeDataset?.counties?.[countyName]
+    ? (activeDataset?.counties?.[countyName] || aggregate(fs))
     : aggregate(fs);
   updatePanel(countyName,data);
 }
