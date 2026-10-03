@@ -460,8 +460,8 @@ function renderMayorTrend(){
   if(!previous||!current){el.innerHTML='<div class="empty">目前範圍沒有可對應的 2018 年縣市長資料。</div>';return;}
   const parties=["民主進步黨","中國國民黨","無黨籍／其他"];
   const a=partyShares(previous,parties),b=partyShares(current,parties);
-  if(!window.trendChart)window.trendChart=echarts.init(el,"dark");
-  window.trendChart.setOption({
+  if(!trendChartInstance)trendChartInstance=echarts.init(el,"dark");
+  trendChartInstance.setOption({
     animationDuration:450,
     grid:{left:32,right:10,top:15,bottom:24},
     xAxis:{type:"category",data:["2018","2022"],axisLabel:{color:"#8190a4",fontSize:9}},
