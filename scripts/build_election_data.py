@@ -341,8 +341,8 @@ HISTORICAL_SOURCES = {
         2001: ["2001縣市長"],
         2005: ["2005縣市長"],
         2009: ["20091205-縣市長縣市議員及鄉鎮長/縣市長"],
-        2014: ["2014-103年地方公職人員選舉/縣市市長"],
-        2018: ["2018-107年地方公職人員選舉/縣市市長"],
+        2014: ["2014-103年地方公職人員選舉/直轄市市長", "2014-103年地方公職人員選舉/縣市市長"],
+        2018: ["2018-107年地方公職人員選舉/直轄市市長", "2018-107年地方公職人員選舉/縣市市長"],
         2022: [],
     },
 }
@@ -391,13 +391,69 @@ def read_csv_rows(path):
         for row in csv.reader(f):
             yield [str(x).strip().strip('"').lstrip("'") for x in row]
 
+def town_map_code(town_map, county, town):
+    """Match historical CEC administrative names to the current town map."""
+    county = normalize_admin_name(county)
+    town = normalize_admin_name(town)
+    candidates = [town]
+    merged_cities = {"新北市", "桃園市", "臺中市", "臺南市", "高雄市"}
+    if county in merged_cities and town and not town.endswith("區"):
+        candidates.append(town[:-1] + "區")
+    for name in candidates:
+        code = town_map.get((county, name))
+        if code:
+            return code
+    return None
+
+def merge_bulk_results(results, town_map, kind, year):
+    """Merge multiple CEC source folders for one election year."""
+    merged = {}
+    national = defaultdict(lambda: {"party": "", "votes": 0})
+    for result in results:
+        for code, row in result.get("towns", {}).items():
+            if code not in merged:
+                merged[code] = {"county": row["county"], "town": row["town"], "totalVotes": 0, "candidates": {}}
+            out = merged[code]
+            out["totalVotes"] += int(row.get("totalVotes", 0) or 0)
+            for cand in row.get("candidates", []):
+                key = cand["name"]
+                if key not in out["candidates"]:
+                    out["candidates"][key] = {"name": key, "party": cand.get("party", ""), "votes": 0}
+                out["candidates"][key]["votes"] += int(cand.get("votes", 0) or 0)
+        for cand in result.get("national", {}).get("candidates", []):
+            key = cand["name"]
+            national[key]["party"] = cand.get("party", "")
+            national[key]["votes"] += int(cand.get("votes", 0) or 0)
+    towns = {}
+    for code, row in merged.items():
+        candidates = sorted(row["candidates"].values(), key=lambda x: -x["votes"])
+        total = row["totalVotes"]
+        towns[code] = {
+            "county": row["county"], "town": row["town"], "totalVotes": total,
+            "candidates": [{**x, "share": round(x["votes"] / total * 100, 2) if total else 0} for x in candidates]
+        }
+    total = sum(v["votes"] for v in national.values())
+    national_rows = [
+        {"name": n, "party": v["party"], "votes": v["votes"], "share": round(v["votes"] / total * 100, 2) if total else 0}
+        for n, v in sorted(national.items(), key=lambda x: -x[1]["votes"])
+    ]
+    return {"year": year, "election": HISTORICAL_ELECTION_NAMES.get(year) if kind == "president" else MAYOR_ELECTION_NAMES.get(year),
+            "national": {"totalVotes": total, "candidates": national_rows}, "towns": towns}
+
+def aggregate_bulk_sources(source_dirs, town_map, kind, year):
+    if isinstance(source_dirs, (str, Path)):
+        source_dirs = [source_dirs]
+    return merge_bulk_results([aggregate_bulk_election(p, town_map, kind, year) for p in source_dirs], town_map, kind, year)
+
 def aggregate_bulk_election(source_dir, town_map, kind, year):
     root = Path(source_dir)
     def pick(prefix):
         exact=root / (prefix+".csv")
         if exact.exists(): return exact
         matches=sorted(root.glob(prefix+"_*.csv"))
-        return matches[0] if matches else None
+        if matches: return matches[0]
+        nested=sorted(root.glob("*/"+prefix+".csv"))
+        return nested[0] if nested else None
     elbase=pick("elbase"); elcand=pick("elcand"); elctks=pick("elctks")
     if not all((elbase, elcand, elctks)):
         raise FileNotFoundError(f"Missing CEC files in {root}")
@@ -468,7 +524,7 @@ def aggregate_bulk_election(source_dir, town_map, kind, year):
     output = {}
     dropped = 0
     for (county, town), item in towns.items():
-        code = town_map.get((normalize_admin_name(county), normalize_admin_name(town)))
+        code = town_map_code(town_map, county, town)
         if not code:
             dropped += 1
             continue
@@ -519,7 +575,15 @@ def build_historical_data(town_map):
                 prv, city, level, area, li, name = row[:6]
                 if area == "000" and li == "0000":
                     county_lookup[(prv, city)] = normalize_admin_name(name)
-            result = aggregate_bulk_election(found, town_map, kind, year)
+            if len(dirs) > 1:
+                source_dirs = []
+                for dirname in dirs:
+                    p = Path("/tmp/cec/voteData") / dirname
+                    if p.exists():
+                        source_dirs.append(p)
+                result = aggregate_bulk_sources(source_dirs, town_map, kind, year)
+            else:
+                result = aggregate_bulk_election(found, town_map, kind, year)
             (presidents if kind=="president" else mayors)[year] = result
     return presidents, mayors
 import argparse
