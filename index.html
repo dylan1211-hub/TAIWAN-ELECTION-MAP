@@ -6,6 +6,7 @@
 <title>TAIWAN ELECTION MAP</title>
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js"></script>
 <style>
 :root{--bg:#070b12;--panel:#0d131d;--panel2:#111a26;--line:#263242;--text:#e7edf5;--muted:#8190a4;--cyan:#67d5ff}
 *{box-sizing:border-box}
@@ -41,7 +42,7 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
 .bar-fill{height:100%;border-radius:99px}
 .legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;color:var(--muted);font-size:11px}
 .legend-item{display:flex;align-items:center;gap:5px}.dot{width:8px;height:8px;border-radius:50%}
-.source{margin-top:20px;color:var(--muted);font-size:10px;line-height:1.6}
+.source{margin-top:20px;color:var(--muted);font-size:10px;line-height:1.6}.chart-box{height:190px;width:100%}.pie-wrap{display:block}.pie-legend{display:none}
 .hint{margin-top:20px;color:var(--muted);font-size:12px;line-height:1.7}
 .badge{display:inline-block;padding:3px 7px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:10px;margin-bottom:12px}
 .empty{color:var(--muted);font-size:12px;line-height:1.7;padding:12px 0}
@@ -97,8 +98,7 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
 
   <div class="section-title">得票率構成</div>
   <div class="pie-wrap">
-    <div class="pie" id="pie"><div class="pie-center">候選人<br>得票</div></div>
-    <div class="pie-legend" id="pieLegend"></div>
+    <div class="chart-box" id="voteShareChart" aria-label="候選人得票率構成圖"></div>
   </div>
 
   <div class="section-title">政黨色彩圖例</div>
@@ -114,7 +114,7 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
 
 <script>
 const $=id=>document.getElementById(id),svg=d3.select("#svg");
-let g,zoom,towns=[],projection,path,selectedCode=null,electionData=null;
+let g,zoom,towns=[],projection,path,selectedCode=null,electionData=null,voteShareChart=null;
 
 const MAP_URL="https://cdn.jsdelivr.net/npm/taiwan-atlas@2021.9.20/towns-10t.json";
 const DATA_URL="data/2024_presidential_town.json";
@@ -261,14 +261,63 @@ function hideTownTooltip(){
 }
 
 function renderPie(data){
-  const rows=data?.candidates||[];
-  const pie=$("pie"),legend=$("pieLegend");
-  if(!pie||!legend)return;
-  if(!rows.length){pie.style.background="var(--panel2)";legend.innerHTML="";return;}
-  let start=0,segments=[];
-  rows.forEach(x=>{const end=start+x.share;segments.push(partyColor(x.party)+" "+start+"% "+end+"%");start=end;});
-  pie.style.background="conic-gradient("+segments.join(",")+")";
-  legend.innerHTML=rows.map(x=>'<div class="pie-item"><span class="pie-dot" style="background:'+partyColor(x.party)+'"></span><span>'+x.name+'</span><span class="pie-share">'+x.share.toFixed(2)+'%</span></div>').join("");
+  const el=$("voteShareChart");
+  if(!el || typeof echarts==="undefined")return;
+  if(!voteShareChart) voteShareChart=echarts.init(el,"dark");
+  const rows=(data?.candidates||[]).filter(x=>Number(x.votes)>0);
+  const total=rows.reduce((s,x)=>s+Number(x.votes||0),0);
+  const leader=rows[0];
+  if(!rows.length){
+    voteShareChart.clear();
+    return;
+  }
+  voteShareChart.setOption({
+    backgroundColor:"transparent",
+    animationDuration:500,
+    tooltip:{
+      trigger:"item",
+      backgroundColor:"#0b111a",
+      borderColor:"#3a485b",
+      textStyle:{color:"#e7edf5",fontSize:12},
+      formatter:p=>p.name+"<br><b>"+fmt(p.value)+" 票</b>　"+p.percent.toFixed(2)+"%"
+    },
+    legend:{
+      bottom:0,
+      left:"center",
+      itemWidth:8,
+      itemHeight:8,
+      itemGap:12,
+      textStyle:{color:"#9aa8ba",fontSize:10}
+    },
+    title:{
+      text:leader?leader.share.toFixed(2)+"%":"",
+      subtext:leader?"最高得票":"候選人",
+      left:"center",
+      top:"31%",
+      textStyle:{color:"#e7edf5",fontSize:22,fontWeight:700},
+      subtextStyle:{color:"#8190a4",fontSize:10,lineHeight:16}
+    },
+    series:[{
+      name:"候選人得票",
+      type:"pie",
+      radius:["52%","76%"],
+      center:["50%","43%"],
+      avoidLabelOverlap:true,
+      stillShowZeroSum:false,
+      itemStyle:{borderColor:"#0d131d",borderWidth:3,borderRadius:5},
+      label:{show:false},
+      emphasis:{
+        scale:true,
+        scaleSize:5,
+        itemStyle:{shadowBlur:18,shadowColor:"rgba(0,0,0,.35)"}
+      },
+      data:rows.map(x=>({
+        value:Number(x.votes),
+        name:x.name,
+        itemStyle:{color:partyColor(x.party)}
+      }))
+    }]
+  },true);
 }
 
 function renderCandidates(data){
@@ -352,7 +401,7 @@ $("electionType").onchange=()=>{
   updatePanel($("place").textContent,electionData?.national);
 };
 $("year").onchange=()=>updatePanel($("place").textContent,electionData?.national);
-window.addEventListener("resize",()=>location.reload());
+window.addEventListener("resize",()=>{\n  if(voteShareChart)voteShareChart.resize();\n  else location.reload();\n});
 
 Promise.all([
   fetch(MAP_URL).then(r=>{if(!r.ok)throw new Error("地圖 HTTP "+r.status);return r.json()}),
