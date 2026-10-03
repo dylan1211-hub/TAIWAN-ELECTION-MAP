@@ -44,7 +44,7 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
 .source{margin-top:20px;color:var(--muted);font-size:10px;line-height:1.6}
 .hint{margin-top:20px;color:var(--muted);font-size:12px;line-height:1.7}
 .badge{display:inline-block;padding:3px 7px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:10px;margin-bottom:12px}
-.empty{color:var(--muted);font-size:12px;line-height:1.7;padding:12px 0}
+.empty{color:var(--muted);font-size:12px;line-height:1.7;padding:12px 0}\n.tooltip{position:fixed;z-index:20;pointer-events:none;min-width:230px;background:#0b111aee;border:1px solid #3a485b;border-radius:9px;padding:11px 12px;box-shadow:0 12px 35px #0008;backdrop-filter:blur(8px);display:none}.tooltip-title{font-size:14px;font-weight:650;margin-bottom:8px}.tooltip-row{display:grid;grid-template-columns:1fr auto;gap:12px;font-size:11px;padding:4px 0}.tooltip-party{color:var(--muted)}.tooltip-share{font-variant-numeric:tabular-nums;font-weight:650}
 </style>
 </head>
 <body>
@@ -204,6 +204,32 @@ function applyElectionColors(){
       .style("fill",leader?partyColor(leader.party):null)
       .style("fill-opacity",leader?(.24+Math.min(leader.share/100,.76)):.0);
   });
+}
+
+function showTownTooltip(e,d){
+  const row=electionData?.towns?.[d.properties.TOWNCODE];
+  if(!row?.candidates?.length)return;
+  const candidates=[...row.candidates].sort((a,b)=>b.votes-a.votes);
+  const total=candidates.reduce((s,x)=>s+x.votes,0);
+  $("tooltip").innerHTML='<div class="tooltip-title">'+d.properties.COUNTYNAME+'・'+d.properties.TOWNNAME+'</div>'+
+    candidates.map(x=>{
+      const share=(x.share!=null?x.share:(total?x.votes/total*100:0));
+      return '<div class="tooltip-row"><div><div>'+x.name+'</div><div class="tooltip-party">'+x.party+'　'+fmt(x.votes)+'票</div></div><div class="tooltip-share">'+share.toFixed(2)+'%</div></div>';
+    }).join("");
+  $("tooltip").style.display="block";
+  moveTownTooltip(e);
+}
+function moveTownTooltip(e){
+  const tip=$("tooltip");
+  if(tip.style.display==="none")return;
+  const pad=14,w=tip.offsetWidth,h=tip.offsetHeight;
+  let x=e.clientX+16,y=e.clientY+16;
+  if(x+w>window.innerWidth-pad)x=e.clientX-w-16;
+  if(y+h>window.innerHeight-pad)y=e.clientY-h-16;
+  tip.style.left=x+"px";tip.style.top=y+"px";
+}
+function hideTownTooltip(){
+  $("tooltip").style.display="none";
 }
 
 function renderCandidates(data){
