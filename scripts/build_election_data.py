@@ -540,7 +540,10 @@ payload = {
         **president_2020,
         "stats": OFFICIAL_PRESIDENT_HISTORY[2020]
     },
-    "presidentHistory": OFFICIAL_PRESIDENT_HISTORY,\n    "presidents": presidents,\n    "mayors": mayors,\n    "availableYears": {"president": sorted(presidents.keys()), "mayor": sorted(mayors.keys())},
+    "presidentHistory": OFFICIAL_PRESIDENT_HISTORY,
+    "presidents": presidents,
+    "mayors": mayors,
+    "availableYears": {"president": sorted(presidents.keys()), "mayor": sorted(mayors.keys())},
     "partylist": {
         "year": 2024,
         "election": "第11屆立法委員全國不分區及僑居國外國民選舉",
