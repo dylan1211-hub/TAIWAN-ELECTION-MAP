@@ -341,17 +341,25 @@ function hideTownTooltip(){
 function renderPie(data){
   const el=$("voteShareChart");
   if(!el || typeof echarts==="undefined")return;
-  if(!voteShareChart) voteShareChart=echarts.init(el,"dark");
+
+  // ECharts owns the contents of this element. Never replace innerHTML while an
+  // instance is alive; doing so detaches the canvas and makes later clicks fail.
   if(activeKey==="mayor" && $("place").textContent==="全臺"){
-    voteShareChart.clear();
+    if(voteShareChart){ voteShareChart.dispose(); voteShareChart=null; }
     el.innerHTML='<div class="empty" style="text-align:center;padding-top:55px">請選擇縣市或鄉鎮市區<br>查看該選區候選人得票率</div>';
     return;
   }
+
   const rows=(data?.candidates||[]).filter(x=>Number(x.votes)>0);
   if(!rows.length){
-    voteShareChart.clear();
+    if(voteShareChart){ voteShareChart.dispose(); voteShareChart=null; }
     el.innerHTML='<div class="empty" style="text-align:center;padding-top:55px">目前選取範圍沒有可用的得票資料。</div>';
     return;
+  }
+
+  if(!voteShareChart){
+    el.innerHTML="";
+    voteShareChart=echarts.init(el,"dark");
   }
   const sorted=[...rows].sort((a,b)=>b.votes-a.votes);
   const top=sorted.slice(0,5);
