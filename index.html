@@ -194,6 +194,27 @@ function aggregate(features){
   return {totalVotes:total,candidates};
 }
 
+function buildTownLookup(){
+  const merged={};
+  for(const [code,row] of Object.entries(electionData?.towns||{})){
+    const townCode=String(code).slice(0,8);
+    if(!merged[townCode]) merged[townCode]={county:row.county,town:row.town,totalVotes:0,candidates:{}};
+    const out=merged[townCode];
+    out.totalVotes+=Number(row.totalVotes||0);
+    for(const x of row.candidates||[]){
+      if(!out.candidates[x.name]) out.candidates[x.name]={name:x.name,party:x.party,votes:0};
+      out.candidates[x.name].votes+=Number(x.votes||0);
+    }
+  }
+  for(const out of Object.values(merged)){
+    out.candidates=Object.values(out.candidates).sort((a,b)=>b.votes-a.votes).map(x=>({...x,share:out.totalVotes?x.votes/out.totalVotes*100:0}));
+  }
+  return merged;
+}
+function townResult(code){
+  return electionData?._townLookup?.[String(code).slice(0,8)]||null;
+}
+
 function applyElectionColors(){
   if(!electionData)return;
   svg.selectAll(".town").each(function(d){
