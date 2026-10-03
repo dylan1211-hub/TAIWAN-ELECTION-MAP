@@ -145,6 +145,17 @@ OFFICIAL_PRESIDENT_HISTORY = {
     2024: {"year":2024,"election":"第16任總統副總統選舉","electors":19548531,"votes":14048310,"validVotes":13947506,"invalidVotes":100804,"turnout":71.86,"candidates":[{"name":"賴清德","party":"民主進步黨","votes":5586019,"share":40.05},{"name":"侯友宜","party":"中國國民黨","votes":4671021,"share":33.49},{"name":"柯文哲","party":"台灣民眾黨","votes":3690466,"share":26.46}]}
 }
 
+OFFICIAL_PARTYLIST_2024 = [
+    {"name":"民主進步黨","party":"民主進步黨","votes":4981060,"share":36.16},
+    {"name":"中國國民黨","party":"中國國民黨","votes":4764293,"share":34.58},
+    {"name":"台灣民眾黨","party":"台灣民眾黨","votes":3040334,"share":22.07},
+    {"name":"時代力量","party":"時代力量","votes":353670,"share":2.57},
+    {"name":"小民參政歐巴桑聯盟","party":"小民參政歐巴桑聯盟","votes":128613,"share":0.93},
+    {"name":"台灣綠黨","party":"台灣綠黨","votes":117298,"share":0.85},
+    {"name":"台灣基進","party":"台灣基進","votes":95078,"share":0.69},
+    {"name":"親民黨","party":"親民黨","votes":69818,"share":0.51}
+]
+
 def aggregate_mayor_csv(source_path):
     national = defaultdict(lambda: {"party": "", "votes": 0})
     counties = {}
