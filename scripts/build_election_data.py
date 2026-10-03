@@ -165,7 +165,7 @@ def aggregate_mayor_towns():
     """Build complete 2022 county/city mayor results at township/district scale from CEC raw vote data."""
     root_base = Path("/tmp/cec/voteData/2022-111年地方公職人員選舉/C1")
     roots = [root_base / "city", root_base / "prv"]
-    if not all(elcand.exists() and elbase.exists() and elctks.exists() for root in roots):
+    if not all((root/"elcand.csv").exists() and (root/"elbase.csv").exists() and (root/"elctks.csv").exists() for root in roots):
         return {}
 
     county_by_codes = {
