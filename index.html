@@ -401,7 +401,10 @@ $("electionType").onchange=()=>{
   updatePanel($("place").textContent,electionData?.national);
 };
 $("year").onchange=()=>updatePanel($("place").textContent,electionData?.national);
-window.addEventListener("resize",()=>{\n  if(voteShareChart)voteShareChart.resize();\n  else location.reload();\n});
+window.addEventListener("resize",()=>{
+  if(voteShareChart)voteShareChart.resize();
+  else location.reload();
+});
 
 Promise.all([
   fetch(MAP_URL).then(r=>{if(!r.ok)throw new Error("地圖 HTTP "+r.status);return r.json()}),
