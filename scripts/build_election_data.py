@@ -1,8 +1,10 @@
+import csv
 import json
 from pathlib import Path
 from collections import defaultdict
 
 SRC = Path("/tmp/cec/data/elections/2020-2024")
+SRC_2018 = Path("/tmp/cec/data/2018/縣市長.csv")
 OUT = Path("data/elections.json")
 OUT.parent.mkdir(parents=True, exist_ok=True)
 
@@ -11,6 +13,10 @@ CANDIDATE_PARTY = {
     "賴清德": "民主進步黨",
     "侯友宜": "中國國民黨",
 }
+
+def normalize_party(party):
+    party = str(party or "").strip()
+    return "無黨籍及未經政黨推薦" if party in ("", "無") else party
 
 def aggregate_village_results(section_name):
     towns = {}
@@ -37,7 +43,7 @@ def aggregate_village_results(section_name):
             if not isinstance(item, dict):
                 continue
             votes = int(item.get("votes", 0) or 0)
-            party = item.get("party", "") or CANDIDATE_PARTY.get(name, "")
+            party = normalize_party(item.get("party", "") or CANDIDATE_PARTY.get(name, ""))
             bucket["candidates"][name]["party"] = party
             bucket["candidates"][name]["votes"] += votes
             national[name]["party"] = party
@@ -131,10 +137,46 @@ def aggregate_partylist():
     ]
     return {"national": {"totalVotes": national_total, "parties": national_rows}, "towns": output}
 
+def aggregate_mayor_2018():
+    national = defaultdict(lambda: {"party": "", "votes": 0})
+    counties = {}
+
+    if not SRC_2018.exists():
+        return {"national": {"totalVotes": 0, "candidates": []}, "counties": {}}
+
+    with SRC_2018.open("r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            county = (row.get("area") or "").strip()
+            name = (row.get("cand_name") or "").strip()
+            if not county or not name:
+                continue
+            party = normalize_party(row.get("party", ""))
+            votes = int((row.get("ticket_num") or "0").replace(",", "") or 0)
+            bucket = counties.setdefault(county, {"totalVotes": 0, "candidates": []})
+            bucket["totalVotes"] += votes
+            bucket["candidates"].append({"name": name, "party": party, "votes": votes})
+            national[name]["party"] = party
+            national[name]["votes"] += votes
+
+    for bucket in counties.values():
+        total = bucket["totalVotes"]
+        bucket["candidates"].sort(key=lambda x: -x["votes"])
+        for x in bucket["candidates"]:
+            x["share"] = round(x["votes"] / total * 100, 2) if total else 0
+
+    total = sum(x["votes"] for x in national.values())
+    national_rows = [
+        {"name": name, "party": val["party"], "votes": val["votes"],
+         "share": round(val["votes"] / total * 100, 2) if total else 0}
+        for name, val in sorted(national.items(), key=lambda x: -x[1]["votes"])
+    ]
+    return {"national": {"totalVotes": total, "candidates": national_rows}, "counties": counties}
+
 payload = {
     "meta": {
         "source": "中央選舉委員會公開選舉資料",
-        "aggregation": "村里層級票數彙整至鄉鎮市區"
+        "aggregation": "村里層級票數彙整至鄉鎮市區；2018縣市長歷史資料為縣市層級"
     },
     "president": {
         "year": 2024,
@@ -155,8 +197,13 @@ payload = {
         "year": 2022,
         "election": "111年直轄市長、縣市長選舉",
         **aggregate_village_results("2022縣市長")
+    },
+    "mayor2018": {
+        "year": 2018,
+        "election": "107年直轄市長、縣市長選舉",
+        **aggregate_mayor_2018()
     }
 }
 
 OUT.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-print(f"Generated {OUT}: president={len(payload['president']['towns'])}, mayor={len(payload['mayor']['towns'])}, partylist={len(payload['partylist']['towns'])}")
+print(f"Generated {OUT}: president={len(payload['president']['towns'])}, mayor={len(payload['mayor']['towns'])}, mayor2018_counties={len(payload['mayor2018']['counties'])}")
