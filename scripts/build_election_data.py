@@ -165,7 +165,7 @@ def aggregate_mayor_towns():
     """Build complete 2022 county/city mayor results at township/district scale from CEC raw vote data."""
     root_base = Path("/tmp/cec/voteData/2022-111年地方公職人員選舉/C1")
     roots = [root_base / "city", root_base / "prv"]
-    if not all((root / "elcand.csv").exists() and (root / "elbase.csv").exists() and (root / "elctks.csv").exists() for root in roots):
+    if not all(elcand.exists() and elbase.exists() and elctks.exists() for root in roots):
         return {}
 
     county_by_codes = {
@@ -393,7 +393,13 @@ def read_csv_rows(path):
 
 def aggregate_bulk_election(source_dir, town_map, kind, year):
     root = Path(source_dir)
-    if not all((root / x).exists() for x in ("elbase.csv", "elcand.csv", "elctks.csv")):
+    def pick(prefix):
+        exact=root / (prefix+".csv")
+        if exact.exists(): return exact
+        matches=sorted(root.glob(prefix+"_*.csv"))
+        return matches[0] if matches else None
+    elbase=pick("elbase"); elcand=pick("elcand"); elctks=pick("elctks")
+    if not all((elbase, elcand, elctks)):
         raise FileNotFoundError(f"Missing CEC files in {root}")
 
     party_lookup = {}
