@@ -236,7 +236,7 @@ def aggregate_mayor_towns():
                 prv, city, level, area, li, dept, cand_no = [x.strip() for x in row[:7]]
                 if not cand_no.isdigit():
                     continue
-                place = place_lookup.get((prv, city, level, area))
+                place = place_lookup.get((prv, city, area))
                 candidate = candidate_lookup.get((prv, city, cand_no))
                 if not place or not candidate:
                     continue
@@ -410,7 +410,7 @@ def aggregate_bulk_election(source_dir, town_map, kind, year):
             continue
         prv, city, level, area, li, name = row[:6]
         if li == "0000" and area != "000":
-            place_lookup[(prv, city, level, area)] = normalize_admin_name(name)
+            place_lookup[(prv, city, area)] = normalize_admin_name(name)
 
     candidate_lookup = {}
     for row in read_csv_rows(root / "elcand.csv"):
