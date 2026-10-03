@@ -340,7 +340,7 @@ HISTORICAL_SOURCES = {
         1997: ["1997縣市長"],
         2001: ["2001縣市長"],
         2005: ["2005縣市長"],
-        2009: ["20091205-縣市長縣市議員及鄉鎮長/縣市長"],
+        2009: ["20091205-縣市長縣市議員及鄉鎮長"],
         2014: ["2014-103年地方公職人員選舉/直轄市市長", "2014-103年地方公職人員選舉/縣市市長"],
         2018: ["2018-107年地方公職人員選舉/直轄市市長", "2018-107年地方公職人員選舉/縣市市長"],
         2022: [],
@@ -554,6 +554,21 @@ def aggregate_bulk_election(source_dir, town_map, kind, year):
     print(f"Aligned {kind} {year}: towns={len(output)}, unmatched_places={dropped}")
     return {"year":year, "election":HISTORICAL_ELECTION_NAMES.get(year) if kind=="president" else MAYOR_ELECTION_NAMES.get(year), "national":{"totalVotes":total,"candidates":national_rows}, "towns":output}
 
+def discover_bulk_sources(root, keyword=""):
+    """Find CEC bulk-election folders below a legacy year directory."""
+    root = Path(root)
+    if not root.exists():
+        return []
+    if all((root / name).exists() for name in ("elbase.csv", "elcand.csv", "elctks.csv")):
+        return [root]
+    found = []
+    for base in sorted(root.rglob("elbase.csv")):
+        folder = base.parent
+        if all((folder / name).exists() for name in ("elcand.csv", "elctks.csv")):
+            if not keyword or keyword in folder.name:
+                found.append(folder)
+    return found
+
 def build_historical_data(town_map):
     presidents, mayors = {}, {}
     # Build county lookup from each source's elbase before reading vote totals.
@@ -562,11 +577,20 @@ def build_historical_data(town_map):
             if not dirs:
                 continue
             found = None
+            source_dirs = []
             for dirname in dirs:
                 p = Path("/tmp/cec/voteData") / dirname
                 if p.exists():
-                    found = p
-                    break
+                    discovered = discover_bulk_sources(
+                        p,
+                        keyword="縣市長" if kind == "mayor" and year == 2009 else ""
+                    )
+                    if discovered:
+                        source_dirs.extend(discovered)
+                    else:
+                        source_dirs.append(p)
+            if source_dirs:
+                found = source_dirs[0]
             if not found and not dirs:
                 root = Path("/tmp/cec/voteData")
                 candidates = [p for p in root.iterdir() if p.is_dir() and p.name.startswith(str(year))]
@@ -585,15 +609,10 @@ def build_historical_data(town_map):
                 prv, city, level, area, li, name = row[:6]
                 if area == "000" and li == "0000":
                     county_lookup[(prv, city)] = normalize_admin_name(name)
-            if len(dirs) > 1:
-                source_dirs = []
-                for dirname in dirs:
-                    p = Path("/tmp/cec/voteData") / dirname
-                    if p.exists():
-                        source_dirs.append(p)
+            if len(source_dirs) > 1:
                 result = aggregate_bulk_sources(source_dirs, town_map, kind, year)
             else:
-                result = aggregate_bulk_election(found, town_map, kind, year)
+                result = aggregate_bulk_election(source_dirs[0] if source_dirs else found, town_map, kind, year)
             (presidents if kind=="president" else mayors)[year] = result
     return presidents, mayors
 import argparse
