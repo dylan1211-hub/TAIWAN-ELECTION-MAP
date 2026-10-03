@@ -465,6 +465,16 @@ def aggregate_bulk_election(source_dir, town_map, kind, year):
             if len(row) >= 2:
                 party_lookup[row[0]] = normalize_party(row[1])
 
+    # County/city names are source-specific; build this lookup from the same
+    # CEC folder instead of reusing another election/source folder.
+    local_county_lookup = {}
+    for row in read_csv_rows(elbase):
+        if len(row) < 6:
+            continue
+        prv, city, level, area, li, name = row[:6]
+        if area == "000" and li == "0000":
+            local_county_lookup[(prv, city)] = normalize_admin_name(name)
+
     # Parent township/district name keyed by the CEC administrative codes.
     place_lookup = {}
     for row in read_csv_rows(elbase):
@@ -506,7 +516,7 @@ def aggregate_bulk_election(source_dir, town_map, kind, year):
         county = None
         # area-level parent can be recovered from elbase; build a small lookup
         # lazily from the same codes when needed.
-        county = county_lookup.get((prv, city))
+        county = local_county_lookup.get((prv, city))
         if not county:
             continue
         try:
