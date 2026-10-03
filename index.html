@@ -378,11 +378,26 @@ function renderPie(data){
       textStyle:{color:"#e7edf5",fontSize:12},
       formatter:p=>p.name+"<br><b>"+fmt(p.value)+" 票</b>　"+p.percent.toFixed(2)+"%"
     },
-    legend:{show:false},
+    legend:{
+      show:true,
+      orient:"vertical",
+      right:0,
+      top:"middle",
+      width:155,
+      itemWidth:10,
+      itemHeight:10,
+      itemGap:7,
+      textStyle:{color:"#aab6c6",fontSize:9},
+      formatter:name=>{
+        const x=shares.find(v=>v.name===name);
+        return x ? name+"  "+x.share.toFixed(1)+"%" : name;
+      },
+      data:shares.map(x=>x.name)
+    },
     title:{
       text:leader?leader.share.toFixed(2)+"%":"",
       subtext:leader?"最高得票":"候選人",
-      left:"center",
+      left:"34%",
       top:"31%",
       textStyle:{color:"#e7edf5",fontSize:22,fontWeight:700},
       subtextStyle:{color:"#8190a4",fontSize:10,lineHeight:16}
@@ -391,7 +406,7 @@ function renderPie(data){
       name:"候選人得票",
       type:"pie",
       radius:["52%","76%"],
-      center:["50%","46%"],
+      center:["35%","46%"],
       avoidLabelOverlap:true,
       stillShowZeroSum:false,
       itemStyle:{borderColor:"#0d131d",borderWidth:3,borderRadius:5},
