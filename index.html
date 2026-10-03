@@ -20,22 +20,141 @@
 <aside class="right"><div class="title">目前選取</div><div class="place" id="place">全臺</div><div class="metric"><span>選舉</span><span id="metricElection">總統副總統</span></div><div class="metric"><span>年份</span><span id="metricYear">2024</span></div><div class="metric"><span>投票率</span><span id="turnout">—</span></div><div class="metric"><span>得票資料</span><span id="votes">待載入</span></div></aside>
 </div>
 <script>
-const $=id=>document.getElementById(id), svg=d3.select('#svg');let g,zoom,towns=[],path,selectedCode=null;
-const DATA_URL='https://cdn.jsdelivr.net/npm/taiwan-atlas@2021.9.20/towns-mercator-10t.json';
+const $=id=>document.getElementById(id),svg=d3.select('#svg');
+let g,zoom,towns=[],counties=[],path,selectedCode=null;
+
+const COUNTY_CODES=['09007','09020','10002','10004','10005','10007','10008','10009','10010','10013','10014','10015','10016','10017','10018','10020','63000','64000','65000','66000','67000','68000'];
+const BASE='https://raw.githubusercontent.com/jason2506/Taiwan.TopoJSON/master/topojson/';
+const TOWN_URLS=COUNTY_CODES.map(c=>BASE+'towns/towns-'+c+'.json');
+const COUNTY_URL=BASE+'counties.json';
+
 function orderNorthSouth(a,b){return path.centroid(a)[1]-path.centroid(b)[1]}
-function setup(features){towns=features;g=svg.append('g');path=d3.geoIdentity();path.fitExtent([[24,18],[svg.node().clientWidth-24,svg.node().clientHeight-18]],{type:'FeatureCollection',features});
-g.selectAll('.town').data(features).join('path').attr('class','town').attr('d',path).attr('data-code',d=>d.properties.TOWNCODE).on('click',(e,d)=>selectTown(d));
-const by=topojson.mesh(window.__tw,window.__tw.objects.towns,(a,b)=>a.properties.COUNTYCODE!==b.properties.COUNTYCODE);g.append('path').datum(by).attr('class','county-border').attr('d',path);
-const tm=topojson.mesh(window.__tw,window.__tw.objects.towns);g.append('path').datum(tm).attr('class','town-border').attr('d',path);
-g.append('path').datum(topojson.feature(window.__tw,window.__tw.objects.nation)).attr('class','nation-border').attr('d',path);
-zoom=d3.zoom().scaleExtent([1,8]).on('zoom',e=>g.attr('transform',e.transform));svg.call(zoom);$('reset').onclick=()=>svg.transition().call(zoom.transform,d3.zoomIdentity);$('zin').onclick=()=>svg.transition().call(zoom.scaleBy,1.35);$('zout').onclick=()=>svg.transition().call(zoom.scaleBy,.74);populate();}
-function populate(){const counties=d3.groups(towns,d=>d.properties.COUNTYCODE).map(([code,fs])=>({code,name:fs[0].properties.COUNTYNAME,features:fs})).sort((a,b)=>d3.mean(a.features,d=>path.centroid(d)[1])-d3.mean(b.features,d=>path.centroid(d)[1]));$('county').innerHTML='<option value="">選擇縣市…</option>'+counties.map(x=>`<option value="${x.code}">${x.name}</option>`).join('');updateTownMenu('');}
-function updateTownMenu(code){const fs=towns.filter(d=>d.properties.COUNTYCODE===code).sort(orderNorthSouth);$('town').innerHTML='<option value="">選擇鄉鎮市區…</option>'+fs.map(d=>`<option value="${d.properties.TOWNCODE}">${d.properties.TOWNNAME}</option>`).join('');}
-function clearSelection(){svg.selectAll('.town').classed('selected',false).classed('county-selected',false);selectedCode=null}
-function selectCountyByCode(code){clearSelection();if(!code){updateTownMenu('');updatePanel('全臺');return}const fs=towns.filter(d=>d.properties.COUNTYCODE===code);svg.selectAll('.town').filter(d=>d.properties.COUNTYCODE===code).classed('county-selected',true);updateTownMenu(code);zoomTo(fs);updatePanel(fs[0].properties.COUNTYNAME);}
-function selectTown(d){clearSelection();selectedCode=d.properties.TOWNCODE;svg.selectAll('.town').filter(x=>x.properties.TOWNCODE===selectedCode).classed('selected',true);$('county').value=d.properties.COUNTYCODE;updateTownMenu(d.properties.COUNTYCODE);$('town').value=selectedCode;zoomTo([d]);updatePanel(`${d.properties.COUNTYNAME}・${d.properties.TOWNNAME}`)}
-function zoomTo(fs){const b=path.bounds({type:'FeatureCollection',features:fs}),w=b[1][0]-b[0][0],h=b[1][1]-b[0][1],cx=(b[0][0]+b[1][0])/2,cy=(b[0][1]+b[1][1])/2,s=Math.max(1,Math.min(7,.72/Math.max(w/svg.node().clientWidth,h/svg.node().clientHeight))),t=d3.zoomIdentity.translate(svg.node().clientWidth/2-s*cx,svg.node().clientHeight/2-s*cy).scale(s);svg.transition().duration(450).call(zoom.transform,t)}
-function updatePanel(name){$('place').textContent=name;$('metricElection').textContent=$('electionType').selectedOptions[0].textContent;$('metricYear').textContent=$('year').value;$('status').textContent=name+'｜行政區地圖'}
-$('county').onchange=e=>selectCountyByCode(e.target.value);$('town').onchange=e=>{const d=towns.find(x=>x.properties.TOWNCODE===e.target.value);if(d)selectTown(d)};$('electionType').onchange=()=>updatePanel($('place').textContent);$('year').onchange=()=>updatePanel($('place').textContent);
-window.addEventListener('resize',()=>location.reload());fetch(DATA_URL).then(r=>r.json()).then(tw=>{window.__tw=tw;setup(topojson.feature(tw,tw.objects.towns).features)}).catch(err=>{$('status').textContent='地圖資料載入失敗';console.error(err)});
+
+function setup(features,countyFeatures){
+  towns=features;counties=countyFeatures;
+  g=svg.append('g');
+  path=d3.geoMercator();
+  path.fitExtent([[24,18],[svg.node().clientWidth-24,svg.node().clientHeight-18]],{type:'FeatureCollection',features:towns});
+  
+  g.selectAll('.town').data(towns).join('path')
+    .attr('class','town').attr('d',path)
+    .attr('data-code',d=>d.properties.TOWNCODE)
+    .on('click',(e,d)=>selectTown(d));
+
+  g.append('g').attr('class','county-layer')
+    .selectAll('path').data(counties).join('path')
+    .attr('class','county-border').attr('d',path);
+
+  g.append('path').datum(topojson.mesh(
+    window.__countyTopo,window.__countyTopo.objects.map
+  )).attr('class','nation-border').attr('d',path);
+
+  zoom=d3.zoom().scaleExtent([1,8]).on('zoom',e=>g.attr('transform',e.transform));
+  svg.call(zoom);
+  $('reset').onclick=()=>svg.transition().call(zoom.transform,d3.zoomIdentity);
+  $('zin').onclick=()=>svg.transition().call(zoom.scaleBy,1.35);
+  $('zout').onclick=()=>svg.transition().call(zoom.scaleBy,.74);
+  populate();
+}
+
+function populate(){
+  const groups=d3.groups(towns,d=>d.properties.COUNTYCODE)
+    .map(([code,fs])=>({
+      code,
+      name:fs[0].properties.COUNTYNAME,
+      features:fs
+    }))
+    .sort((a,b)=>d3.mean(a.features,d=>path.centroid(d)[1])-d3.mean(b.features,d=>path.centroid(d)[1]));
+
+  $('county').innerHTML='<option value="">選擇縣市…</option>'+
+    groups.map(x=>`<option value="${x.code}">${x.name}</option>`).join('');
+  updateTownMenu('');
+}
+
+function updateTownMenu(code){
+  const fs=towns.filter(d=>d.properties.COUNTYCODE===code).sort(orderNorthSouth);
+  $('town').innerHTML='<option value="">選擇鄉鎮市區…</option>'+
+    fs.map(d=>`<option value="${d.properties.TOWNCODE}">${d.properties.TOWNNAME}</option>`).join('');
+}
+
+function clearSelection(){
+  svg.selectAll('.town').classed('selected',false).classed('county-selected',false);
+  selectedCode=null;
+}
+
+function selectCountyByCode(code){
+  clearSelection();
+  if(!code){updateTownMenu('');updatePanel('全臺');return}
+  const fs=towns.filter(d=>d.properties.COUNTYCODE===code);
+  svg.selectAll('.town').filter(d=>d.properties.COUNTYCODE===code).classed('county-selected',true);
+  updateTownMenu(code);
+  zoomTo(fs);
+  updatePanel(fs[0]?.properties.COUNTYNAME||'縣市');
+}
+
+function selectTown(d){
+  clearSelection();
+  selectedCode=d.properties.TOWNCODE;
+  svg.selectAll('.town').filter(x=>x.properties.TOWNCODE===selectedCode).classed('selected',true);
+  $('county').value=d.properties.COUNTYCODE;
+  updateTownMenu(d.properties.COUNTYCODE);
+  $('town').value=selectedCode;
+  zoomTo([d]);
+  updatePanel(`${d.properties.COUNTYNAME}・${d.properties.TOWNNAME}`);
+}
+
+function zoomTo(fs){
+  const b=path.bounds({type:'FeatureCollection',features:fs}),
+    w=b[1][0]-b[0][0],h=b[1][1]-b[0][1],
+    cx=(b[0][0]+b[1][0])/2,cy=(b[0][1]+b[1][1])/2,
+    s=Math.max(1,Math.min(7,.72/Math.max(w/svg.node().clientWidth,h/svg.node().clientHeight))),
+    t=d3.zoomIdentity.translate(svg.node().clientWidth/2-s*cx,svg.node().clientHeight/2-s*cy).scale(s);
+  svg.transition().duration(450).call(zoom.transform,t);
+}
+
+function updatePanel(name){
+  $('place').textContent=name;
+  $('metricElection').textContent=$('electionType').selectedOptions[0].textContent;
+  $('metricYear').textContent=$('year').value;
+  $('status').textContent=name+'｜行政區地圖';
+}
+
+$('county').onchange=e=>selectCountyByCode(e.target.value);
+$('town').onchange=e=>{
+  const d=towns.find(x=>x.properties.TOWNCODE===e.target.value);
+  if(d)selectTown(d);
+};
+$('electionType').onchange=()=>updatePanel($('place').textContent);
+$('year').onchange=()=>updatePanel($('place').textContent);
+
+window.addEventListener('resize',()=>location.reload());
+
+Promise.all([
+  fetch(COUNTY_URL).then(r=>{if(!r.ok)throw new Error('縣市界資料載入失敗');return r.json()}),
+  ...TOWN_URLS.map(url=>fetch(url).then(r=>{if(!r.ok)throw new Error('鄉鎮界資料載入失敗: '+url);return r.json()}))
+]).then(([countyTopo,...townTopos])=>{
+  window.__countyTopo=countyTopo;
+  const countyFeatures=topojson.feature(countyTopo,countyTopo.objects.map).features
+    .map(f=>({...f,properties:{...f.properties,COUNTYCODE:f.properties.id,COUNTYNAME:f.properties.name}}));
+  const townFeatures=[];
+  townTopos.forEach((topo,i)=>{
+    const code=COUNTY_CODES[i];
+    const county=countyFeatures.find(f=>f.properties.COUNTYCODE===code);
+    const countyName=county?.properties.COUNTYNAME||'';
+    const objectName=Object.keys(topo.objects)[0];
+    topojson.feature(topo,topo.objects[objectName]).features.forEach(f=>{
+      townFeatures.push({...f,properties:{
+        ...f.properties,
+        TOWNCODE:f.properties.id,
+        TOWNNAME:f.properties.name,
+        COUNTYCODE:code,
+        COUNTYNAME:countyName
+      }});
+    });
+  });
+  setup(townFeatures,countyFeatures);
+}).catch(err=>{
+  console.error(err);
+  $('status').textContent='地圖資料載入失敗';
+});
 </script></body></html>
