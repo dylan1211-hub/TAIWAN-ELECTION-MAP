@@ -7,7 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <style>
 :root{--bg:#070b12;--panel:#0d131d;--panel2:#111a26;--line:#263242;--text:#e7edf5;--muted:#8190a4}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,"Noto Sans TC",system-ui,sans-serif;overflow:hidden}.app{height:100vh;display:grid;grid-template-columns:280px 1fr 330px}.side,.right{background:var(--panel);padding:22px}.side{border-right:1px solid var(--line)}.right{border-left:1px solid var(--line)}h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);font-size:12px;margin-bottom:25px}.label{font-size:11px;color:var(--muted);margin:18px 0 7px}.select{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px}.map{position:relative;min-width:0}.mapbar{position:absolute;z-index:3;left:20px;top:18px;background:#0d131dcc;border:1px solid var(--line);border-radius:9px;padding:8px 12px;color:var(--muted);font-size:12px}.map svg{width:100%;height:100%;display:block}.town{fill:#121b27;stroke:#344152;stroke-width:.45;cursor:pointer}.town:hover{fill:#1b2a3a}.town.selected{fill:#67d5ff;fill-opacity:.8;stroke:#d9f8ff;stroke-width:1.1}.town.county-selected{fill:#173041}.town-border{fill:none;stroke:#536174;stroke-width:.7;pointer-events:none}.county-border{fill:none;stroke:#8c99aa;stroke-width:1.15;pointer-events:none}.nation-border{fill:none;stroke:#c5d0dc;stroke-width:1.35;pointer-events:none}.zoom-controls{position:absolute;right:18px;bottom:18px;display:flex;gap:6px}.zoom-controls button{width:34px;height:34px;background:#0d131d;border:1px solid var(--line);color:var(--text);border-radius:7px}.title{font-size:12px;color:var(--muted);margin-bottom:5px}.place{font-size:25px;font-weight:650;margin-bottom:18px}.metric{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:11px 0;font-size:13px}.metric span:last-child{font-variant-numeric:tabular-nums}.hint{margin-top:20px;color:var(--muted);font-size:12px;line-height:1.7}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,"Noto Sans TC",system-ui,sans-serif;overflow:hidden}.app{height:100vh;display:grid;grid-template-columns:280px 1fr 330px}.side,.right{background:var(--panel);padding:22px}.side{border-right:1px solid var(--line)}.right{border-left:1px solid var(--line)}h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);font-size:12px;margin-bottom:25px}.label{font-size:11px;color:var(--muted);margin:18px 0 7px}.select{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px}.map{position:relative;min-width:0}.mapbar{position:absolute;z-index:3;left:20px;top:18px;background:#0d131dcc;border:1px solid var(--line);border-radius:9px;padding:8px 12px;color:var(--muted);font-size:12px}.map svg{width:100%;height:100%;display:block}.town{fill:#121b27;stroke:#344152;stroke-width:.45;cursor:pointer}.town:hover{fill:#1b2a3a}.town.selected{fill:#67d5ff;fill-opacity:.8;stroke:#d9f8ff;stroke-width:1.1}.town.county-selected{fill:#173041}.town-border{fill:none;stroke:#536174;stroke-width:.7;pointer-events:none}.county-border{fill:none;stroke:#8c99aa;stroke-width:1.05;pointer-events:none}.nation-border{fill:none;stroke:#c5d0dc;stroke-width:1.25;pointer-events:none}.zoom-controls{position:absolute;right:18px;bottom:18px;display:flex;gap:6px}.zoom-controls button{width:34px;height:34px;background:#0d131d;border:1px solid var(--line);color:var(--text);border-radius:7px}.title{font-size:12px;color:var(--muted);margin-bottom:5px}.place{font-size:25px;font-weight:650;margin-bottom:18px}.metric{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:11px 0;font-size:13px}.metric span:last-child{font-variant-numeric:tabular-nums}.hint{margin-top:20px;color:var(--muted);font-size:12px;line-height:1.7}
 </style></head>
 <body><div class="app">
 <aside class="side"><h1>TAIWAN ELECTION MAP</h1><div class="sub">臺灣歷年選舉地圖資料平台</div>
@@ -16,38 +16,36 @@
 <div class="label">縣市</div><select class="select" id="county"><option value="">選擇縣市…</option></select>
 <div class="label">鄉鎮市區</div><select class="select" id="town"><option value="">選擇鄉鎮市區…</option></select>
 <div class="hint">地圖先以行政區界線與選區互動為核心；選舉結果資料將由獨立資料層載入，方便後續擴充歷年選舉。</div></aside>
-<main class="map"><div class="mapbar" id="status">行政區地圖</div><svg id="svg"></svg><div class="zoom-controls"><button id="reset">↺</button><button id="zin">＋</button><button id="zout">－</button></div></main>
+<main class="map"><div class="mapbar" id="status">地圖資料載入中…</div><svg id="svg"></svg><div class="zoom-controls"><button id="reset">↺</button><button id="zin">＋</button><button id="zout">－</button></div></main>
 <aside class="right"><div class="title">目前選取</div><div class="place" id="place">全臺</div><div class="metric"><span>選舉</span><span id="metricElection">總統副總統</span></div><div class="metric"><span>年份</span><span id="metricYear">2024</span></div><div class="metric"><span>投票率</span><span id="turnout">—</span></div><div class="metric"><span>得票資料</span><span id="votes">待載入</span></div></aside>
 </div>
 <script>
 const $=id=>document.getElementById(id),svg=d3.select('#svg');
-let g,zoom,towns=[],counties=[],path,selectedCode=null;
-
-const COUNTY_CODES=['09007','09020','10002','10004','10005','10007','10008','10009','10010','10013','10014','10015','10016','10017','10018','10020','63000','64000','65000','66000','67000','68000'];
-const BASE='https://raw.githubusercontent.com/jason2506/Taiwan.TopoJSON/master/topojson/';
-const TOWN_URLS=COUNTY_CODES.map(c=>BASE+'towns/towns-'+c+'.json');
-const COUNTY_URL=BASE+'counties.json';
+let g,zoom,towns=[],path,selectedCode=null;
+const DATA_URL='https://cdn.jsdelivr.net/npm/taiwan-atlas@2021.9.20/towns-mercator-10t.json';
 
 function orderNorthSouth(a,b){return path.centroid(a)[1]-path.centroid(b)[1]}
 
-function setup(features,countyFeatures){
-  towns=features;counties=countyFeatures;
+function setup(topo){
+  const townFeatures=topojson.feature(topo,topo.objects.towns).features;
+  towns=townFeatures;
   g=svg.append('g');
-  path=d3.geoMercator();
+  path=d3.geoIdentity();
   path.fitExtent([[24,18],[svg.node().clientWidth-24,svg.node().clientHeight-18]],{type:'FeatureCollection',features:towns});
-  
+
   g.selectAll('.town').data(towns).join('path')
     .attr('class','town').attr('d',path)
     .attr('data-code',d=>d.properties.TOWNCODE)
     .on('click',(e,d)=>selectTown(d));
 
-  g.append('g').attr('class','county-layer')
-    .selectAll('path').data(counties).join('path')
-    .attr('class','county-border').attr('d',path);
+  const townMesh=topojson.mesh(topo,topo.objects.towns);
+  g.append('path').datum(townMesh).attr('class','town-border').attr('d',path);
 
-  g.append('path').datum(topojson.mesh(
-    window.__countyTopo,window.__countyTopo.objects.map
-  )).attr('class','nation-border').attr('d',path);
+  const countyMesh=topojson.mesh(topo,topo.objects.towns,(a,b)=>a.properties.COUNTYCODE!==b.properties.COUNTYCODE);
+  g.append('path').datum(countyMesh).attr('class','county-border').attr('d',path);
+
+  const nation=topojson.feature(topo,topo.objects.nation);
+  g.append('path').datum(nation).attr('class','nation-border').attr('d',path);
 
   zoom=d3.zoom().scaleExtent([1,8]).on('zoom',e=>g.attr('transform',e.transform));
   svg.call(zoom);
@@ -55,26 +53,22 @@ function setup(features,countyFeatures){
   $('zin').onclick=()=>svg.transition().call(zoom.scaleBy,1.35);
   $('zout').onclick=()=>svg.transition().call(zoom.scaleBy,.74);
   populate();
+  $('status').textContent='行政區地圖';
 }
 
 function populate(){
   const groups=d3.groups(towns,d=>d.properties.COUNTYCODE)
-    .map(([code,fs])=>({
-      code,
-      name:fs[0].properties.COUNTYNAME,
-      features:fs
-    }))
+    .map(([code,fs])=>({code,name:fs[0].properties.COUNTYNAME,features:fs}))
     .sort((a,b)=>d3.mean(a.features,d=>path.centroid(d)[1])-d3.mean(b.features,d=>path.centroid(d)[1]));
-
   $('county').innerHTML='<option value="">選擇縣市…</option>'+
-    groups.map(x=>`<option value="${x.code}">${x.name}</option>`).join('');
+    groups.map(x=>'<option value="'+x.code+'">'+x.name+'</option>').join('');
   updateTownMenu('');
 }
 
 function updateTownMenu(code){
   const fs=towns.filter(d=>d.properties.COUNTYCODE===code).sort(orderNorthSouth);
   $('town').innerHTML='<option value="">選擇鄉鎮市區…</option>'+
-    fs.map(d=>`<option value="${d.properties.TOWNCODE}">${d.properties.TOWNNAME}</option>`).join('');
+    fs.map(d=>'<option value="'+d.properties.TOWNCODE+'">'+d.properties.TOWNNAME+'</option>').join('');
 }
 
 function clearSelection(){
@@ -100,15 +94,15 @@ function selectTown(d){
   updateTownMenu(d.properties.COUNTYCODE);
   $('town').value=selectedCode;
   zoomTo([d]);
-  updatePanel(`${d.properties.COUNTYNAME}・${d.properties.TOWNNAME}`);
+  updatePanel(d.properties.COUNTYNAME+'・'+d.properties.TOWNNAME);
 }
 
 function zoomTo(fs){
-  const b=path.bounds({type:'FeatureCollection',features:fs}),
-    w=b[1][0]-b[0][0],h=b[1][1]-b[0][1],
-    cx=(b[0][0]+b[1][0])/2,cy=(b[0][1]+b[1][1])/2,
-    s=Math.max(1,Math.min(7,.72/Math.max(w/svg.node().clientWidth,h/svg.node().clientHeight))),
-    t=d3.zoomIdentity.translate(svg.node().clientWidth/2-s*cx,svg.node().clientHeight/2-s*cy).scale(s);
+  const b=path.bounds({type:'FeatureCollection',features:fs});
+  const w=b[1][0]-b[0][0],h=b[1][1]-b[0][1];
+  const cx=(b[0][0]+b[1][0])/2,cy=(b[0][1]+b[1][1])/2;
+  const s=Math.max(1,Math.min(7,.72/Math.max(w/svg.node().clientWidth,h/svg.node().clientHeight)));
+  const t=d3.zoomIdentity.translate(svg.node().clientWidth/2-s*cx,svg.node().clientHeight/2-s*cy).scale(s);
   svg.transition().duration(450).call(zoom.transform,t);
 }
 
@@ -129,32 +123,11 @@ $('year').onchange=()=>updatePanel($('place').textContent);
 
 window.addEventListener('resize',()=>location.reload());
 
-Promise.all([
-  fetch(COUNTY_URL).then(r=>{if(!r.ok)throw new Error('縣市界資料載入失敗');return r.json()}),
-  ...TOWN_URLS.map(url=>fetch(url).then(r=>{if(!r.ok)throw new Error('鄉鎮界資料載入失敗: '+url);return r.json()}))
-]).then(([countyTopo,...townTopos])=>{
-  window.__countyTopo=countyTopo;
-  const countyFeatures=topojson.feature(countyTopo,countyTopo.objects.map).features
-    .map(f=>({...f,properties:{...f.properties,COUNTYCODE:f.properties.id,COUNTYNAME:f.properties.name}}));
-  const townFeatures=[];
-  townTopos.forEach((topo,i)=>{
-    const code=COUNTY_CODES[i];
-    const county=countyFeatures.find(f=>f.properties.COUNTYCODE===code);
-    const countyName=county?.properties.COUNTYNAME||'';
-    const objectName=Object.keys(topo.objects)[0];
-    topojson.feature(topo,topo.objects[objectName]).features.forEach(f=>{
-      townFeatures.push({...f,properties:{
-        ...f.properties,
-        TOWNCODE:f.properties.id,
-        TOWNNAME:f.properties.name,
-        COUNTYCODE:code,
-        COUNTYNAME:countyName
-      }});
-    });
+fetch(DATA_URL)
+  .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+  .then(setup)
+  .catch(err=>{
+    console.error('Taiwan map load error:',err);
+    $('status').textContent='地圖資料載入失敗';
   });
-  setup(townFeatures,countyFeatures);
-}).catch(err=>{
-  console.error(err);
-  $('status').textContent='地圖資料載入失敗';
-});
 </script></body></html>
