@@ -687,6 +687,9 @@ Promise.all([
   Object.values(electionData.mayor.towns||{}).forEach(row=>{
     mayorNameLookup[mayorPlaceKey(row.county,row.town)]=row;
   });
+  const initialYears=electionData?.availableYears?.president||[2024];
+  $("year").innerHTML=initialYears.slice().sort((a,b)=>b-a).map(y=>'<option value="'+y+'">'+y+'</option>').join("");
+  $("year").value="2024";
   $("town").disabled=false;
   partyTownLookup=buildPartyTownLookup();
   history2020Lookup=buildHistoryLookup(electionData.president2020);
