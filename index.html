@@ -22,7 +22,7 @@
 <script>
 const $=id=>document.getElementById(id),svg=d3.select('#svg');
 let g,zoom,towns=[],path,selectedCode=null;
-const DATA_URL='https://cdn.jsdelivr.net/npm/taiwan-atlas@2021.9.20/towns-mercator-10t.json';
+const DATA_URL='https://cdn.jsdelivr.net/npm/taiwan-atlas@2021.9.20/towns-10t.json';
 
 function orderNorthSouth(a,b){return path.centroid(a)[1]-path.centroid(b)[1]}
 
@@ -30,7 +30,7 @@ function setup(topo){
   const townFeatures=topojson.feature(topo,topo.objects.towns).features;
   towns=townFeatures;
   g=svg.append('g');
-  path=d3.geoIdentity();
+  path=d3.geoMercator();
   path.fitExtent([[24,18],[svg.node().clientWidth-24,svg.node().clientHeight-18]],{type:'FeatureCollection',features:towns});
 
   g.selectAll('.town').data(towns).join('path')
@@ -128,6 +128,6 @@ fetch(DATA_URL)
   .then(setup)
   .catch(err=>{
     console.error('Taiwan map load error:',err);
-    $('status').textContent='地圖資料載入失敗';
+    $('status').textContent='地圖資料載入失敗：'+(err?.message||err);
   });
 </script></body></html>
