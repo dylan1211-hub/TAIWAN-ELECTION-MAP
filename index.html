@@ -307,8 +307,8 @@ function applyElectionColors(){
     const leader=row?.candidates?.[0];
     d3.select(this)
       .classed("result-enabled",!!row)
-      .style("fill",leader?partyColor(leader.party):null)
-      .style("fill-opacity",leader?(.24+Math.min(leader.share/100,.76)):.0);
+      .style("fill",leader?partyColor(leader.party):"#121b27")
+      .style("fill-opacity",leader?(.24+Math.min(leader.share/100,.76)):.72);
   });
 }
 
