@@ -96,14 +96,6 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
   <div class="section-title" id="partylistTitle">2024 不分區政黨票</div>
   <div class="mini-chart" id="partylistChart"></div>
 
-  <div class="section-title">政黨色彩</div>
-  <div class="legend">
-    <div class="legend-item"><span class="dot" style="background:#1b9e3f"></span>民主進步黨</div>
-    <div class="legend-item"><span class="dot" style="background:#2f6fd6"></span>中國國民黨</div>
-    <div class="legend-item"><span class="dot" style="background:#19a7ce"></span>台灣民眾黨</div>
-    <div class="legend-item"><span class="dot" style="background:#738196"></span>其他</div>
-  </div>
-
   <div class="source">資料來源：中央選舉委員會公開選舉資料。總統與不分區資料彙整至鄉鎮市區；縣市長資料以縣市為統計層級。</div>
 </aside>
 <section class="history-panel" id="historyPanel">
@@ -510,7 +502,7 @@ function renderCandidates(data){
     return '<div class="candidate">'+
       '<div class="candidate-head"><div><div class="candidate-name">'+x.name+'</div><div class="candidate-party">'+x.party+'</div></div>'+
       '<div class="candidate-value">'+fmt(x.votes)+'　'+x.share.toFixed(2)+'%</div></div>'+
-      '<div class="bar-track"><div class="bar-fill" style="width:'+(x.share/max*100)+'%;background:'+color+'"></div></div>'+
+      '<div class="bar-track"><div class="bar-fill" style="width:'+Math.min(100,Math.max(0,x.share))+'%;background:'+color+'"></div></div>'+
       '</div>';
   }).join("");
 }
