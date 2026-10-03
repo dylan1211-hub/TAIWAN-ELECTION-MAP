@@ -443,7 +443,7 @@ def aggregate_bulk_election(source_dir, town_map, kind, year):
         if not cand_no.isdigit():
             continue
         place = place_lookup.get((prv, city, area))
-        cand = candidate_lookup.get((prv, city, cand_no))
+        cand = candidate_lookup.get((prv, city, cand_no)) or candidate_lookup.get(("00", "000", cand_no))
         if not place or not cand:
             continue
         # Find the county name from the parent administrative row.
