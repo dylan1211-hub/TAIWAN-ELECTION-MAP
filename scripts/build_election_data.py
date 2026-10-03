@@ -411,7 +411,7 @@ def aggregate_bulk_election(source_dir, town_map, kind, year):
 
     # Parent township/district name keyed by the CEC administrative codes.
     place_lookup = {}
-    for row in read_csv_rows(root / "elbase.csv"):
+    for row in read_csv_rows(elbase):
         if len(row) < 6:
             continue
         prv, city, level, area, li, name = row[:6]
@@ -419,7 +419,7 @@ def aggregate_bulk_election(source_dir, town_map, kind, year):
             place_lookup[(prv, city, area)] = normalize_admin_name(name)
 
     candidate_lookup = {}
-    for row in read_csv_rows(root / "elcand.csv"):
+    for row in read_csv_rows(elcand):
         if len(row) < 8:
             continue
         prv, city, level, area, li, cand_no, name, party_code = row[:8]
@@ -436,7 +436,7 @@ def aggregate_bulk_election(source_dir, town_map, kind, year):
     towns = {}
     national = defaultdict(lambda: {"party": "", "votes": 0})
     unmatched = 0
-    for row in read_csv_rows(root / "elctks.csv"):
+    for row in read_csv_rows(elctks):
         if len(row) < 8:
             continue
         prv, city, level, area, li, dept, cand_no = row[:7]
@@ -513,7 +513,7 @@ def build_historical_data(town_map):
             # Inject a county-code lookup used by the generic parser.
             global county_lookup
             county_lookup = {}
-            for row in read_csv_rows(found / "elbase.csv"):
+            for row in read_csv_rows(next(found.glob("elbase*.csv"))):
                 if len(row) < 6:
                     continue
                 prv, city, level, area, li, name = row[:6]
