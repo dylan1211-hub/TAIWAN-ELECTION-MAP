@@ -507,10 +507,132 @@ function renderMayorHistory(){
       {name:"其他",type:"bar",stack:"total",data:rows.map(x=>x.other),itemStyle:{color:"#738196"}}
     ]
   },true);
+}
 
 function renderCandidates(data){
   const box=$("candidates");
-  if(!box)return;
-  if(!data?.candidates?.length){box.innerHTML='<div class="empty">目前選取範圍沒有可用的選舉票數資料。</div>';return;}
-  box.innerHTML=data.candidates.map(x=>'<div class="candidate"><div class="candidate-head"><div><div class="candidate-name">'+x.name+'</div><div class="candidate-party">'+x.party+'</div></div><div class="candidate-value">'+fmt(x.votes)+'　'+x.share.toFixed(2)+'%</div></div><div class="bar-track"><div class="bar-fill" style="width:'+Math.min(100,Math.max(0,x.share))+'%;background:'+partyColor(x.party)+'"></div></div></div>').join("");
+  if(!data?.candidates?.length){
+    box.innerHTML='<div class="empty">目前選取範圍沒有可用的選舉票數資料。</div>';
+    return;
+  }
+  box.innerHTML=data.candidates.map(x=>{
+    const color=partyColor(x.party);
+    return '<div class="candidate">'+
+      '<div class="candidate-head"><div><div class="candidate-name">'+x.name+'</div><div class="candidate-party">'+x.party+'</div></div>'+
+      '<div class="candidate-value">'+fmt(x.votes)+'　'+x.share.toFixed(2)+'%</div></div>'+
+      '</div>';
+  }).join("");
 }
+
+function updatePanel(name,data){
+  $("place").textContent=name;
+  $("validVotes").textContent=data?fmt(data.totalVotes):"—";
+  $("dataBadge").textContent=$("year").value+" "+$("electionType").selectedOptions[0].textContent;
+  $("dataLevel").textContent="資料層級："+(name==="全臺"?"全臺":(activeKey==="mayor"?"縣市":"鄉鎮市區"));
+  const panelData=data||activeDataset?.national;
+  renderRegionKpis(panelData);
+  renderCandidates(panelData);
+  renderPie(panelData);
+  const partyData=selectedFeatures.length>1?aggregatePartylist(selectedFeatures):(partyTownResult(selectedCode)||electionData?.partylist?.national);
+  renderPartylist(partyData);
+  renderHistory();
+  $("status").textContent=name+"｜"+$("year").value+" "+$("electionType").selectedOptions[0].textContent;
+}
+function zoomTo(fs){
+  if(!fs.length)return;
+  const b=path.bounds({type:"FeatureCollection",features:fs});
+  const w=b[1][0]-b[0][0],h=b[1][1]-b[0][1];
+  const cx=(b[0][0]+b[1][0])/2,cy=(b[0][1]+b[1][1])/2;
+  const s=Math.max(1,Math.min(7,.72/Math.max(w/svg.node().clientWidth,h/svg.node().clientHeight)));
+  const t=d3.zoomIdentity.translate(svg.node().clientWidth/2-s*cx,svg.node().clientHeight/2-s*cy).scale(s);
+  svg.transition().duration(450).call(zoom.transform,t);
+}
+
+function selectCountyByCode(code){
+  clearSelection();
+  if(!code){
+    updateTownMenu("");
+    zoomTo(towns);
+    selectedFeatures=towns;
+    updatePanel("全臺",activeDataset?.national);
+    return;
+  }
+  const fs=towns.filter(d=>d.properties.COUNTYCODE===code);
+  svg.selectAll(".town").filter(d=>d.properties.COUNTYCODE===code).classed("county-selected",true);
+  $("town").value="";
+  updateTownMenu(code);
+  selectedFeatures=fs;
+  zoomTo(fs);
+  const countyName=fs[0]?.properties.COUNTYNAME||"縣市";
+  const data=activeKey==="mayor"
+    ? activeDataset?.counties?.[countyName]
+    : aggregate(fs);
+  updatePanel(countyName,data);
+}
+
+function selectTown(d){
+  clearSelection();
+  selectedCode=d.properties.TOWNCODE;
+  selectedFeatures=[d];
+  svg.selectAll(".town").filter(x=>x.properties.TOWNCODE===selectedCode).classed("selected",true);
+  $("county").value=d.properties.COUNTYCODE;
+  updateTownMenu(d.properties.COUNTYCODE);
+  $("town").value=selectedCode;
+  zoomTo([d]);
+  updatePanel(d.properties.COUNTYNAME+"・"+d.properties.TOWNNAME,townResult(selectedCode));
+}
+
+$("county").onchange=e=>selectCountyByCode(e.target.value);
+$("town").onchange=e=>{
+  const d=towns.find(x=>x.properties.TOWNCODE===e.target.value);
+  if(d)selectTown(d);
+};
+function setElectionType(){
+  const type=$("electionType").value;
+  activeKey=type==="mayor"?"mayor":"president";
+  activeDataset=electionData?.[activeKey];
+  $("year").innerHTML=activeKey==="mayor"?'<option value="2022">2022</option>':'<option value="2024">2024</option>';
+  $("town").disabled=false;
+  $("town").title="";
+  selectedCode=null;
+  selectedFeatures=towns;
+  clearSelection();
+  applyElectionColors();
+  zoomTo(towns);
+  updatePanel("全臺",activeDataset?.national);
+  $("status").textContent="行政區地圖｜"+(activeDataset?.year||"")+" "+(activeDataset?.election||"")+"｜"+(activeKey==="mayor"?"鄉鎮市區層級":"鄉鎮市區層級");
+}
+$("electionType").onchange=setElectionType;
+$("year").onchange=()=>{activeDataset=electionData?.[activeKey];applyElectionColors();updatePanel($("place").textContent,activeDataset?.national)};
+window.addEventListener("resize",()=>{
+  if(voteShareChart)voteShareChart.resize();
+  if(partyChartInstance)partyChartInstance.resize();
+  if(trendChartInstance)trendChartInstance.resize();
+  if(historyTurnoutChartInstance)historyTurnoutChartInstance.resize();
+  if(historyShareChartInstance)historyShareChartInstance.resize();
+  if(mayorAnalysisChartInstance)mayorAnalysisChartInstance.resize();
+});
+
+Promise.all([
+  fetch(MAP_URL).then(r=>{if(!r.ok)throw new Error("地圖 HTTP "+r.status);return r.json()}),
+  fetch(DATA_URL).then(r=>{if(!r.ok)throw new Error("選舉資料 HTTP "+r.status);return r.json()})
+]).then(([topo,data])=>{
+  electionData=data;
+  activeDataset=electionData.president;
+  selectedFeatures=towns;
+  activeDataset._townLookup=buildTownLookup(activeDataset);
+  electionData.mayor._townLookup=buildTownLookup(electionData.mayor);
+  mayorNameLookup={};
+  Object.values(electionData.mayor.towns||{}).forEach(row=>{mayorNameLookup[row.county+"|"+row.town]=row;});
+  $("town").disabled=false;
+  partyTownLookup=buildPartyTownLookup();
+  history2020Lookup=buildHistoryLookup(electionData.president2020);
+  mayor2018Lookup=electionData.mayor2018?.counties||{};
+  setup(topo);
+}).catch(err=>{
+  console.error("Taiwan election map error:",err);
+  $("status").textContent="載入失敗："+(err?.message||err);
+});
+</script>
+</body>
+</html>
