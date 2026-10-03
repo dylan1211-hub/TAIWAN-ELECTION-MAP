@@ -253,7 +253,7 @@ function hideTownTooltip(){
   $("tooltip").style.display="none";
 }
 
-function renderCandidates(data){
+function renderPie(data){\n  const rows=data?.candidates||[];\n  const pie=$("pie"),legend=$("pieLegend");\n  if(!rows.length){pie.style.background="var(--panel2)";legend.innerHTML="";return;}\n  let start=0,segments=[];\n  rows.forEach(x=>{const end=start+x.share;segments.push(partyColor(x.party)+" "+start+"% "+end+"%");start=end;});\n  pie.style.background="conic-gradient("+segments.join(",")+")";\n  legend.innerHTML=rows.map(x=>'<div class="pie-item"><span class="pie-dot" style="background:'+partyColor(x.party)+'"></span><span>'+x.name+'</span><span class="pie-share">'+x.share.toFixed(2)+'%</span></div>').join("");\n}\n\nfunction renderCandidates(data){
   const box=$("candidates");
   if(!data?.candidates?.length){
     box.innerHTML='<div class="empty">目前選取範圍沒有可用的選舉票數資料。</div>';
@@ -276,7 +276,7 @@ function updatePanel(name,data){
   $("metricYear").textContent=$("year").value;
   $("validVotes").textContent=data?fmt(data.totalVotes):"—";
   $("dataBadge").textContent=$("year").value+" "+$("electionType").selectedOptions[0].textContent;
-  renderCandidates(data||electionData?.national);
+  const panelData=data||electionData?.national;\n  renderCandidates(panelData);\n  renderPie(panelData);
   $("status").textContent=name+"｜"+$("year").value+" "+$("electionType").selectedOptions[0].textContent;
 }
 
