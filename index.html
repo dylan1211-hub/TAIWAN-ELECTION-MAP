@@ -127,7 +127,7 @@ let g,zoom,towns=[],projection,path,selectedCode=null,electionData=null,voteShar
 
 const MAP_URL="https://cdn.jsdelivr.net/npm/taiwan-atlas@2021.9.20/towns-10t.json";
 const DATA_URL="data/elections.json";
-let activeKey="president",activeDataset=null,partyTownLookup={},history2020Lookup={};
+let activeKey="president",activeDataset=null,partyTownLookup={},history2020Lookup={},selectedFeatures=[];
 
 const PARTY_COLOR={
   "民主進步黨":"#1b9e3f",
@@ -249,6 +249,19 @@ function buildPartyTownLookup(){
   return merged;
 }
 function partyTownResult(code){return partyTownLookup[String(code).slice(0,8)]||null;}
+function aggregatePartylist(features){
+  const rows={};
+  for(const f of features){
+    const d=partyTownResult(f.properties.TOWNCODE);
+    if(!d)continue;
+    for(const x of d.parties||[]){
+      if(!rows[x.name])rows[x.name]={name:x.name,party:x.party,votes:0};
+      rows[x.name].votes+=x.votes;
+    }
+  }
+  const total=Object.values(rows).reduce((s,x)=>s+x.votes,0);
+  return {totalVotes:total,parties:Object.values(rows).sort((a,b)=>b.votes-a.votes).map(x=>({...x,share:total?x.votes/total*100:0}))};
+}
 function buildHistoryLookup(source){
   const merged={};
   for(const [code,row] of Object.entries(source?.towns||{})){
@@ -267,6 +280,19 @@ function buildHistoryLookup(source){
   return merged;
 }
 function historyResult(code){return history2020Lookup[String(code).slice(0,8)]||null;}
+function aggregateHistory(features){
+  const rows={};
+  for(const f of features){
+    const d=historyResult(f.properties.TOWNCODE);
+    if(!d)continue;
+    for(const x of d.candidates||[]){
+      if(!rows[x.name])rows[x.name]={name:x.name,party:x.party,votes:0};
+      rows[x.name].votes+=x.votes;
+    }
+  }
+  const total=Object.values(rows).reduce((s,x)=>s+x.votes,0);
+  return {totalVotes:total,candidates:Object.values(rows).map(x=>({...x,share:total?x.votes/total*100:0}))};
+}
 
 function applyElectionColors(){
   if(!activeDataset)return;
@@ -394,8 +420,8 @@ function renderTrend(code){
   if(!el||!title)return;
   if(activeKey!=="president"){title.classList.add("module-hidden");el.classList.add("module-hidden");return;}
   title.classList.remove("module-hidden");el.classList.remove("module-hidden");
-  const current=townResult(code)||electionData?.president?.national;
-  const previous=code?historyResult(code):electionData?.president2020?.national;
+  const current=code?townResult(code):(selectedFeatures.length>1?aggregate(selectedFeatures):electionData?.president?.national);
+  const previous=code?historyResult(code):(selectedFeatures.length>1?aggregateHistory(selectedFeatures):electionData?.president2020?.national);
   if(!current||!previous){el.innerHTML='<div class="empty">歷年資料不足。</div>';return;}
   const parties=["民主進步黨","中國國民黨","台灣民眾黨"];
   const byParty=row=>parties.map(p=>({party:p,share:(row.candidates||[]).filter(x=>x.party===p).reduce((s,x)=>s+x.votes,0)/(row.totalVotes||1)*100}));
@@ -430,7 +456,7 @@ function updatePanel(name,data){
   renderRegionKpis(panelData);
   renderCandidates(panelData);
   renderPie(panelData);
-  const partyData=partyTownResult(selectedCode)||electionData?.partylist?.national;
+  const partyData=selectedFeatures.length>1?aggregatePartylist(selectedFeatures):(partyTownResult(selectedCode)||electionData?.partylist?.national);
   renderPartylist(partyData);
   renderTrend(selectedCode);
   $("status").textContent=name+"｜"+$("year").value+" "+$("electionType").selectedOptions[0].textContent;
@@ -451,6 +477,7 @@ function selectCountyByCode(code){
   if(!code){
     updateTownMenu("");
     zoomTo(towns);
+    selectedFeatures=towns;
     updatePanel("全臺",activeDataset?.national);
     return;
   }
@@ -458,6 +485,7 @@ function selectCountyByCode(code){
   svg.selectAll(".town").filter(d=>d.properties.COUNTYCODE===code).classed("county-selected",true);
   $("town").value="";
   updateTownMenu(code);
+  selectedFeatures=fs;
   zoomTo(fs);
   updatePanel(fs[0]?.properties.COUNTYNAME||"縣市",aggregate(fs));
 }
@@ -465,6 +493,7 @@ function selectCountyByCode(code){
 function selectTown(d){
   clearSelection();
   selectedCode=d.properties.TOWNCODE;
+  selectedFeatures=[d];
   svg.selectAll(".town").filter(x=>x.properties.TOWNCODE===selectedCode).classed("selected",true);
   $("county").value=d.properties.COUNTYCODE;
   updateTownMenu(d.properties.COUNTYCODE);
@@ -484,6 +513,7 @@ function setElectionType(){
   activeDataset=electionData?.[activeKey];
   $("year").innerHTML=activeKey==="mayor"?'<option value="2022">2022</option>':'<option value="2024">2024</option>';
   selectedCode=null;
+  selectedFeatures=towns;
   clearSelection();
   applyElectionColors();
   zoomTo(towns);
@@ -494,7 +524,8 @@ $("electionType").onchange=setElectionType;
 $("year").onchange=()=>{activeDataset=electionData?.[activeKey];applyElectionColors();updatePanel($("place").textContent,activeDataset?.national)};
 window.addEventListener("resize",()=>{
   if(voteShareChart)voteShareChart.resize();
-  else location.reload();
+  if(window.partyChart)window.partyChart.resize();
+  if(window.trendChart)window.trendChart.resize();
 });
 
 Promise.all([
@@ -503,6 +534,7 @@ Promise.all([
 ]).then(([topo,data])=>{
   electionData=data;
   activeDataset=electionData.president;
+  selectedFeatures=towns;
   activeDataset._townLookup=buildTownLookup(activeDataset);
   electionData.mayor._townLookup=buildTownLookup(electionData.mayor);
   partyTownLookup=buildPartyTownLookup();
