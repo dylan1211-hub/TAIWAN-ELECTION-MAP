@@ -34,9 +34,9 @@ jobs:
             voteData/1997縣市長 \
             voteData/2000年10任總統 \
             voteData/2001縣市長 \
-            voteData/2004   11任總統 \
+            "voteData/2004   11任總統" \
             voteData/2005縣市長 \
-            voteData/2008 12任總統 \
+            "voteData/2008 12任總統" \
             voteData/20091205-縣市長縣市議員及鄉鎮長 \
             voteData/20120114-總統及立委 \
             voteData/2014-103年地方公職人員選舉 \
