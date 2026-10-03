@@ -72,7 +72,7 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
   <div class="label">鄉鎮市區</div>
   <select class="select" id="town"><option value="">選擇鄉鎮市區…</option></select>
 
-  <div class="hint">目前已接入 2024 年總統副總統、2022 年縣市長鄉鎮市區層級票數；縣市長另提供 2018→2022 縣市層級歷史比較。
+  <div class="hint">目前已接入 2024／2020 總統副總統鄉鎮市區票數、2024 不分區政黨票，以及 2018／2022 縣市長縣市層級票數；底部提供歷屆統計。
 </aside>
 
 <main class="map">
@@ -112,11 +112,11 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
     <div class="history-cards" id="historyCards"></div>
   </div>
   <div class="history-card">
-    <div class="history-head"><div><div class="history-title">歷屆投票率</div><div class="history-sub">選舉人數與實際投票比例</div></div></div>
+    <div class="history-head"><div><div class="history-title" id="historyMetricTitle">歷屆投票率</div><div class="history-sub">選舉人數與實際投票比例</div></div></div>
     <div class="history-chart" id="historyTurnoutChart"></div>
   </div>
   <div class="history-card">
-    <div class="history-head"><div><div class="history-title">歷屆候選組得票率</div><div class="history-sub">以政黨／候選組呈現，缺席年份不連線</div></div></div>
+    <div class="history-head"><div><div class="history-title" id="historyShareTitle">歷屆候選組得票率</div><div class="history-sub">以政黨／候選組呈現，缺席年份不連線</div></div></div>
     <div class="history-chart" id="historyShareChart"></div>
   </div>
 </section></div>
@@ -467,11 +467,37 @@ function renderHistory(){
   },true);
 }
 function renderMayorHistory(){
-  const cards=$("historyCards");
-  cards.innerHTML='<div class="history-year-card"><div class="history-year">2018</div><div class="history-winner">縣市長</div><div class="history-meta">縣市層級資料</div></div><div class="history-year-card"><div class="history-year">2022</div><div class="history-winner">縣市長</div><div class="history-meta">縣市層級資料</div></div>';
-  $("historyTurnoutChart").innerHTML='<div class="empty">縣市長歷年投票率資料尚未納入。</div>';
-  $("historyShareChart").innerHTML='<div class="empty">可比較 2018 → 2022 的縣市長政黨得票率。</div>';
+  const history=[["2018",electionData?.mayor2018?.national],["2022",electionData?.mayor?.national]];
+  $("historyMetricTitle").textContent="縣市長全國候選組得票率";
+  $("historyShareTitle").textContent="2018 → 2022 政黨得票率";
+  $("historyPanel").querySelector(".history-sub").textContent="2018–2022 全國縣市長選舉";
+  $("historyCards").innerHTML=history.map(([y,s])=>{
+    const lead=s?.candidates?.[0];
+    return '<div class="history-year-card"><div class="history-year">'+y+'</div><div class="history-winner">'+(lead?.name||"—")+'</div><div class="history-meta">'+(lead?.party||"—")+'</div><div class="history-stat">得票率 '+(lead?.share?.toFixed(2)||"—")+'%</div><div class="history-stat">票數 '+fmt(lead?.votes||0)+'</div></div>';
+  }).join("");
+  const parties=["民主進步黨","中國國民黨","無黨籍／其他"];
+  const rows=history.map(([y,s])=>({year:y,shares:partyShares(s,parties)}));
+  if(!historyTurnoutChartInstance)historyTurnoutChartInstance=echarts.init($("historyTurnoutChart"),"dark");
+  historyTurnoutChartInstance.setOption({
+    animationDuration:450,grid:{left:34,right:20,top:12,bottom:28},
+    xAxis:{type:"category",data:rows.map(x=>x.year),axisLabel:{color:"#8190a4",fontSize:10}},
+    yAxis:{type:"value",min:0,max:60,axisLabel:{color:"#8190a4",fontSize:9,formatter:v=>v+"%"},splitLine:{lineStyle:{color:"#263242"}}},
+    tooltip:{trigger:"axis",backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},valueFormatter:v=>Number(v).toFixed(2)+"%"},
+    legend:{bottom:0,textStyle:{color:"#9aa8ba",fontSize:9},itemWidth:10,itemHeight:7},
+    series:parties.map((p,i)=>({name:p,type:"bar",barMaxWidth:18,data:rows.map(x=>x.shares[i].share),itemStyle:{color:partyColor(p),borderRadius:[3,3,0,0]}}))
+  },true);
+  if(!historyShareChartInstance)historyShareChartInstance=echarts.init($("historyShareChart"),"dark");
+  const candidates=Array.from(new Set(history.flatMap(([y,s])=>(s?.candidates||[]).map(x=>x.name))));
+  historyShareChartInstance.setOption({
+    animationDuration:450,grid:{left:34,right:20,top:12,bottom:26},
+    xAxis:{type:"category",data:history.map(x=>x[0]),axisLabel:{color:"#8190a4",fontSize:10}},
+    yAxis:{type:"value",min:0,max:60,axisLabel:{color:"#8190a4",fontSize:9,formatter:v=>v+"%"},splitLine:{lineStyle:{color:"#263242"}}},
+    tooltip:{trigger:"axis",backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},valueFormatter:v=>Number(v).toFixed(2)+"%"},
+    legend:{bottom:0,textStyle:{color:"#9aa8ba",fontSize:9},itemWidth:10,itemHeight:7},
+    series:candidates.map(name=>({name,type:"line",smooth:true,symbol:"circle",symbolSize:5,data:history.map(([y,s])=>{const x=(s?.candidates||[]).find(v=>v.name===name);return x?x.share:null}),connectNulls:false,lineStyle:{width:2,color:partyColor((history.flatMap(([y,s])=>s?.candidates||[]).find(v=>v.name===name)||{}).party)},itemStyle:{color:partyColor((history.flatMap(([y,s])=>s?.candidates||[]).find(v=>v.name===name)||{}).party)}}))
+  },true);
 }
+
 function renderCandidates(data){
   const box=$("candidates");
   if(!data?.candidates?.length){
