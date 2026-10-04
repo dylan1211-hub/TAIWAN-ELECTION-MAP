@@ -119,7 +119,7 @@ const $=id=>document.getElementById(id),svg=d3.select("#svg");
 let g,zoom,towns=[],projection,path,selectedCode=null,electionData=null,voteShareChart=null,partyChartInstance=null,trendChartInstance=null,historyTurnoutChartInstance=null,historyShareChartInstance=null,mayorAnalysisChartInstance=null;
 
 const MAP_URL="https://cdn.jsdelivr.net/npm/taiwan-atlas@2021.9.20/towns-10t.json";
-const DATA_URL="data/elections.json?v=20261004-1";
+const DATA_URL="data/elections.json?v=20261004-2";
 let activeKey="president",activeDataset=null,partyTownLookup={},partyNameLookup={},history2020Lookup={},mayor2018Lookup={},mayorNameLookup={},selectedFeatures=[];
 
 const PARTY_COLOR={
