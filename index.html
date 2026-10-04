@@ -919,6 +919,7 @@ body{
           <select class="select" id="electionType">
             <option value="president">總統副總統</option>
             <option value="mayor">縣市長</option>
+            <option value="metroMayor">直轄市長</option>
           </select>
         </div>
       </label>
@@ -1037,6 +1038,10 @@ function datasetFor(type,year){
 
   if(type==="mayor"){
     return electionData?.mayors?.[y] || null;
+  }
+
+  if(type==="metroMayor"){
+    return electionData?.metroMayors?.[y] || null;
   }
 
   return null;
@@ -1632,9 +1637,10 @@ function renderMayorHistory(){
   const selectedCounty=selectedFeatures?.[0]?.properties?.COUNTYNAME ||
     ($("place").textContent==="全臺" ? "" : $("place").textContent.split("・")[0]);
 
-  $("historyCardOverview").querySelector(".history-title").textContent="縣市長選舉分析";
+  const metro=activeKey==="metroMayor";
+  $("historyCardOverview").querySelector(".history-title").textContent=metro?"直轄市長選舉分析":"縣市長選舉分析";
   $("historyCardOverview").querySelector(".history-sub").textContent=
-    (activeDataset?.year||"")+" 各縣市政黨得票率｜依當年資料比較"+
+    (activeDataset?.year||"")+" 各直轄市政黨得票率｜依當年資料比較"+
     (selectedCounty ? "｜目前選取："+selectedCounty : "");
 
   $("historyCards").innerHTML="";
@@ -1700,10 +1706,12 @@ function renderMayorHistory(){
 }
 
 function renderMayorSeatHistory(){
-  const years=Object.keys(electionData?.mayors||{}).map(Number).sort((a,b)=>a-b);
+  const metro=activeKey==="metroMayor";
+  const source=metro?(electionData?.metroMayors||{}):(electionData?.mayors||{});
+  const years=Object.keys(source).map(Number).sort((a,b)=>a-b);
   const parties=["民主進步黨","中國國民黨","台灣民眾黨","其他"];
   const stats=years.map(year=>{
-    const ds=electionData.mayors?.[year]||{};
+    const ds=source?.[year]||{};
     const buckets={};
     // 2022 has official county-level totals; older years are reconstructed
     // from aligned township/district results.
@@ -1744,6 +1752,8 @@ function renderMayorSeatHistory(){
     };
   });
 
+  $("historyCardMayorSeats").querySelector(".history-title").textContent=metro?"歷屆直轄市長政黨執政席次":"歷屆政黨執政席次變化";
+  $("historyCardMayorSeats").querySelector(".history-sub").textContent=metro?"臺北市、高雄市歷屆市長當選席次｜依政黨比較":"各次縣市長選舉當選首長席次｜依政黨比較";
   if(!mayorSeatChartInstance)mayorSeatChartInstance=echarts.init($("mayorSeatChart"),"dark");
   mayorSeatChartInstance.setOption({
     animationDuration:450,
@@ -1756,8 +1766,8 @@ function renderMayorSeatHistory(){
     yAxis:{
       type:"value",
       min:0,
-      max:Math.max(22,...stats.map(x=>x.dpp+x.kmt+x.tpp+x.other)),
-      interval:5,
+      max:metro?2:Math.max(22,...stats.map(x=>x.dpp+x.kmt+x.tpp+x.other)),
+      interval:metro?1:5,
       name:"席",
       nameTextStyle:{color:"#8190a4",fontSize:9},
       axisLabel:{color:"#8190a4",fontSize:9},
@@ -1860,7 +1870,7 @@ function updatePanel(name,data){
   $("place").textContent=name;
   $("validVotes").textContent=(activeKey==="mayor" && name==="全臺")?"—":(data?fmt(data.totalVotes):"—");
   $("dataBadge").textContent=$("year").value+" "+$("electionType").selectedOptions[0].textContent;
-  $("dataLevel").textContent="資料層級："+(name==="全臺"?"全臺":(activeKey==="mayor"?"縣市":"鄉鎮市區"));
+  $("dataLevel").textContent="資料層級："+(name==="全臺"?"全臺":((activeKey==="mayor"||activeKey==="metroMayor")?"縣市":"鄉鎮市區"));
   renderWinner(name);
   const panelData=data||activeDataset?.national;
   renderRegionKpis(panelData);
@@ -1901,7 +1911,7 @@ function selectCountyByCode(code){
   selectedFeatures=fs;
   zoomTo(fs);
   const countyName=fs[0]?.properties.COUNTYNAME||"縣市";
-  const data=activeKey==="mayor"
+  const data=(activeKey==="mayor"||activeKey==="metroMayor")
     ? (activeDataset?.counties?.[countyName] || aggregate(fs))
     : aggregate(fs);
   updatePanel(countyName,data);
@@ -1928,9 +1938,9 @@ $("town").onchange=e=>{
 };
 function setElectionType(){
   const type=$("electionType").value;
-  activeKey=type==="mayor"?"mayor":"president";
+  activeKey=type==="metroMayor"?"metroMayor":type==="mayor"?"mayor":"president";
   const years=electionData?.availableYears?.[activeKey]||[];
-  const current=activeKey==="mayor"?2022:2024;
+  const current=activeKey==="metroMayor"?2006:activeKey==="mayor"?2022:2024;
   $("year").innerHTML=years.slice().sort((a,b)=>b-a).map(y=>'<option value="'+y+'">'+(activeKey==="mayor" && Number(y)===2009 ? "2009-2010" : y)+'</option>').join("");
   $("year").value=years.includes(current)?String(current):String(years[0]||current);
   refreshCustomSelect("electionType");
