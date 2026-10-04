@@ -143,8 +143,20 @@ function datasetFor(type,year){
 
   return null;
 }
+function normalizeCandidateRows(ds){
+  if(!ds)return ds;
+  for(const row of Object.values(ds.towns||{})){
+    if(row && !Array.isArray(row.candidates)){
+      row.candidates=Object.values(row.candidates||{})
+        .sort((a,b)=>Number(b.votes||0)-Number(a.votes||0));
+    }
+  }
+  return ds;
+}
+
 function prepareDataset(ds){
   if(!ds)return ds;
+  normalizeCandidateRows(ds);
   const firstKey=Object.keys(ds.towns||{})[0]||"";
   if(activeKey==="president" && firstKey.length>8){
     ds._townLookup=buildTownLookup(ds);
