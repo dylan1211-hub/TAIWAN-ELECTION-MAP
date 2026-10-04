@@ -661,6 +661,19 @@ function partyShares(bucket){
   const total=Object.values(out).reduce((a,b)=>a+b,0)||1;
   return out;
 }
+function normalizeCountyLabel(name){
+  return String(name||"").trim()
+    .replaceAll("台","臺")
+    .replace("臺北縣","新北市")
+    .replace("桃園縣","桃園市")
+    .replace("臺中縣","臺中市")
+    .replace("臺南縣","臺南市")
+    .replace("高雄縣","高雄市");
+}
+function sameCountyLabel(a,b){
+  return normalizeCountyLabel(a)===normalizeCountyLabel(b);
+}
+
 function renderMayorHistory(){
   const buckets={};
   Object.values(activeDataset?.towns||{}).forEach(row=>{
@@ -703,9 +716,9 @@ function renderMayorHistory(){
     value:x[key],
     itemStyle:{
       color:partyColor(key==="dpp"?"民主進步黨":key==="kmt"?"中國國民黨":key==="tpp"?"台灣民眾黨":"其他"),
-      opacity:selectedCounty ? (x.county===selectedCounty?1:.28) : 1,
-      borderColor:x.county===selectedCounty ? "#f4f8fc" : "transparent",
-      borderWidth:x.county===selectedCounty ? 1.5 : 0
+      opacity:selectedCounty ? (sameCountyLabel(x.county,selectedCounty)?1:.28) : 1,
+      borderColor:selectedCounty && sameCountyLabel(x.county,selectedCounty) ? "#f4f8fc" : "transparent",
+      borderWidth:selectedCounty && sameCountyLabel(x.county,selectedCounty) ? 1.5 : 0
     }
   }));
 
@@ -717,7 +730,7 @@ function renderMayorHistory(){
       type:"category",inverse:true,data:rows.map(x=>x.county),
       axisLabel:{
         fontSize:9,
-        formatter:value=>value===selectedCounty?"{selected|"+value+"}":value,
+        formatter:value=>selectedCounty && sameCountyLabel(value,selectedCounty)?"{selected|"+value+"}":value,
         rich:{selected:{color:"#f4f8fc",fontWeight:700,backgroundColor:"#25364a",borderRadius:4,padding:[3,5]}}
       }
     },
@@ -726,7 +739,7 @@ function renderMayorHistory(){
       textStyle:{color:"#e7edf5",fontSize:11},
       formatter:params=>{
         const row=rows[params[0]?.dataIndex]; if(!row)return "";
-        const mark=row.county===selectedCounty?" ★ 目前選取":"";
+        const mark=selectedCounty && sameCountyLabel(row.county,selectedCounty)?" ★ 目前選取":"";
         return "<b>"+row.county+mark+"</b><br>"+
           "民主進步黨　"+row.dpp.toFixed(2)+"%<br>"+
           "中國國民黨　"+row.kmt.toFixed(2)+"%<br>"+
@@ -742,6 +755,20 @@ function renderMayorHistory(){
       {name:"其他",type:"bar",stack:"total",data:barData("other"),itemStyle:{color:"#738196"}}
     ]
   },true);
+
+  // 將目前選取的縣市自動捲到分析區中央，避免使用者需要自己找被高亮的列。
+  const scrollBox=$("mayorAnalysisChart")?.parentElement;
+  if(scrollBox && selectedCounty){
+    const targetIndex=rows.findIndex(x=>sameCountyLabel(x.county,selectedCounty));
+    if(targetIndex>=0){
+      const centerY=mayorAnalysisChartInstance.convertToPixel({yAxisIndex:0},targetIndex);
+      requestAnimationFrame(()=>{
+        const maxScroll=Math.max(0,scrollBox.scrollHeight-scrollBox.clientHeight);
+        const targetScroll=Math.max(0,Math.min(maxScroll,centerY-scrollBox.clientHeight/2));
+        scrollBox.scrollTo({top:targetScroll,behavior:"smooth"});
+      });
+    }
+  }
 }
 
 function renderMayorSeatHistory(){
