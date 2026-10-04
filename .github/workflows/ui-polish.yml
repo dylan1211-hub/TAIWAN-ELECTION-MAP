@@ -111,9 +111,12 @@ jobs:
               <div class="party-key"><i class="party-dot tpp"></i><span>台灣民眾黨</span></div>
             </div>
           </aside>'''
-          if old_sidebar not in s:
+          import re
+          m=re.search(r'<aside class="side">.*?</aside>',s,re.S)
+          if not m:
               raise SystemExit("sidebar block not found")
-          s=s.replace(old_sidebar,new_sidebar,1)
+          new_sidebar=new_sidebar.replace("            <div class=\"side-section-label\">資料選擇</div>","            <div class=\"side-section-label\">資料選擇</div>\n            <div class=\"filter-current\" id=\"filterCurrent\">2024 · 總統副總統</div>")
+          s=s[:m.start()]+new_sidebar+s[m.end():]
 
           css=r'''
 /* UI-POLISH-V1 */
@@ -210,7 +213,7 @@ body::-webkit-scrollbar-thumb:hover,.side::-webkit-scrollbar-thumb:hover,.right:
 .history-panel.mayor-layout{grid-template-columns:1.15fr 1fr}
 .history-panel.mayor-layout .history-card{min-width:0}
 .history-panel.mayor-layout .history-card:first-child{min-width:0}
-.history-panel.mayor-layout .mayor-seat-card{display:flex}
+.history-panel.mayor-layout .mayor-seat-card,.history-panel.mayor-layout .mayor-seat-card[style]{display:flex!important}
 .history-panel.mayor-layout .mayor-seat-card .history-head{flex:0 0 auto}
 .history-panel.mayor-layout .mayor-seat-chart{flex:1}
 .mayor-analysis-scroll::-webkit-scrollbar-thumb{background:#3b5068}
