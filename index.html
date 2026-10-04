@@ -1668,8 +1668,18 @@ function renderPie(data){
 function renderRegionKpis(data){
   const box=$("regionKpis");
   if(!box)return;
-  if((activeKey==="mayor" || activeKey==="metroMayor") && $("place").textContent==="全臺"){
-    box.innerHTML='<div class="empty" style="grid-column:1/-1">'+(activeKey==="metroMayor"?"直轄市長為臺北市、高雄市分別選舉，無單一「全臺候選人得票率」。":"縣市長為各縣市分別選舉，無單一「全臺候選人得票率」。")+'<br>請選擇縣市或鄉鎮市區查看詳細結果。</div>';
+  if(activeKey==="metroMayor" && $("place").textContent==="全臺"){
+    const total=Number(data?.totalVotes||0);
+    box.innerHTML=[
+      ["選舉城市","2 市"],
+      ["有效票",total?fmt(total):"—"],
+      ["資料範圍","臺北市＋高雄市"],
+      ["當選單位","2 席"]
+    ].map(x=>'<div class="kpi-card"><div class="kpi-label">'+x[0]+'</div><div class="kpi-value">'+x[1]+'</div></div>').join("");
+    return;
+  }
+  if(activeKey==="mayor" && $("place").textContent==="全臺"){
+    box.innerHTML='<div class="empty" style="grid-column:1/-1">縣市長為各縣市分別選舉，無單一「全臺候選人得票率」。<br>請選擇縣市或鄉鎮市區查看詳細結果。</div>';
     return;
   }
   const leader=data?.candidates?.[0];
