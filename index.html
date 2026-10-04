@@ -893,9 +893,165 @@ body{
   stroke-width:1.35;
 }
 
+/* PUBLIC-V1: accessibility, loading, and release polish */
+button,select{font:inherit}
+button:focus-visible,
+select:focus-visible,
+.custom-select-trigger:focus-visible,
+.custom-select-option:focus-visible{
+  outline:2px solid #20d7ff;
+  outline-offset:2px;
+}
+.custom-select-trigger[aria-expanded="true"]{
+  border-color:#27c9f5;
+  box-shadow:inset 0 0 18px rgba(32,215,255,.055),0 0 14px rgba(32,215,255,.09);
+}
+.custom-select-option{
+  outline:none;
+}
+.app-loading{
+  position:fixed;
+  inset:0;
+  z-index:5000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  background:rgba(3,8,15,.96);
+  backdrop-filter:blur(10px);
+}
+.app-loading.hidden{display:none}
+.app-loading-card{
+  width:min(420px,100%);
+  padding:24px;
+  border:1px solid #24516b;
+  border-radius:14px;
+  background:linear-gradient(145deg,#0c1b29,#08111c);
+  box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 28px rgba(32,215,255,.08);
+  text-align:center;
+}
+.app-loading-title{font-size:15px;font-weight:750;letter-spacing:.04em}
+.app-loading-text{margin-top:8px;color:#8498ad;font-size:11px;line-height:1.6}
+.app-loading-action{
+  display:none;
+  margin-top:15px;
+  min-height:40px;
+  padding:0 16px;
+  border:1px solid #287fa5;
+  border-radius:8px;
+  background:#0c2537;
+  color:#dff8ff;
+  cursor:pointer;
+}
+.app-loading.error .app-loading-action{display:inline-flex;align-items:center;justify-content:center}
+.app-loading.error .app-loading-title{color:#ffb4b4}
+.info-button{
+  width:100%;
+  min-height:38px;
+  margin-top:12px;
+  border:1px solid #1f4056;
+  border-radius:9px;
+  background:#0a1622;
+  color:#8ca0b4;
+  cursor:pointer;
+  font-size:10px;
+}
+.info-button:hover{border-color:#2a86ad;color:#dff8ff;background:#0c1d2c}
+.info-modal{
+  position:fixed;
+  inset:0;
+  z-index:4500;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:rgba(2,7,13,.72);
+  backdrop-filter:blur(8px);
+}
+.info-modal.open{display:flex}
+.info-modal-card{
+  width:min(680px,100%);
+  max-height:min(82vh,760px);
+  overflow:auto;
+  padding:22px;
+  border:1px solid #24516b;
+  border-radius:14px;
+  background:linear-gradient(145deg,#0d1a27,#07111c);
+  box-shadow:0 24px 70px rgba(0,0,0,.55),0 0 32px rgba(32,215,255,.08);
+}
+.info-modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.info-modal-title{font-size:18px;font-weight:750}
+.info-modal-sub{margin-top:4px;color:#71869b;font-size:10px}
+.info-modal-close{
+  width:34px;height:34px;flex:0 0 34px;border:1px solid #294357;border-radius:8px;
+  background:#0a1622;color:#9bb0c2;cursor:pointer;font-size:18px;
+}
+.info-modal-close:hover{border-color:#20d7ff;color:#e8fbff}
+.info-modal-section{margin-top:18px;padding-top:14px;border-top:1px solid #1c2e40}
+.info-modal-section h3{margin:0 0 7px;font-size:11px;color:#cfe8f5}
+.info-modal-section p,.info-modal-section li{font-size:10px;line-height:1.7;color:#8ea1b4}
+.info-modal-section ul{margin:6px 0 0;padding-left:18px}
+.info-modal-section a{color:#67d5ff}
+.release-note{margin-top:8px;color:#5f7388;font-size:8px;line-height:1.5}
+@media (max-width:600px){
+  .app-loading-card{padding:20px}
+  .custom-select-trigger{min-height:44px}
+  .clear-filter,.info-button{min-height:42px}
+  .zoom-controls button{width:42px;height:42px}
+  .info-modal{padding:12px}
+  .info-modal-card{max-height:88vh;padding:18px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
+}
+
 </style>
 </head>
 <body>
+<div class="app-loading" id="appLoading" role="status" aria-live="polite">
+  <div class="app-loading-card">
+    <div class="app-loading-title" id="loadingTitle">正在載入選舉資料</div>
+    <div class="app-loading-text" id="loadingText">正在載入地圖與歷史選舉資料，請稍候。</div>
+    <button class="app-loading-action" id="loadingRetry" type="button">重新整理</button>
+  </div>
+</div>
+<div class="info-modal" id="infoModal" role="dialog" aria-modal="true" aria-labelledby="infoModalTitle">
+  <div class="info-modal-card">
+    <div class="info-modal-head">
+      <div>
+        <div class="info-modal-title" id="infoModalTitle">關於 TAIWAN ELECTION MAP</div>
+        <div class="info-modal-sub">臺灣歷年選舉地圖資料平台</div>
+      </div>
+      <button class="info-modal-close" id="infoModalClose" type="button" aria-label="關閉關於本站">×</button>
+    </div>
+    <div class="info-modal-section">
+      <h3>本站簡介</h3>
+      <p>以互動式地圖探索臺灣歷屆選舉結果，將選舉資料與行政區空間資訊整合呈現。</p>
+    </div>
+    <div class="info-modal-section">
+      <h3>資料來源</h3>
+      <p>選舉資料主要整理自中央選舉委員會公開選舉資料庫。歷史資料經欄位標準化、候選人資料整理及行政區名稱對齊後提供查詢。</p>
+      <p><a href="https://db.cec.gov.tw/" target="_blank" rel="noopener noreferrer">前往中央選舉委員會選舉資料庫 ↗</a></p>
+    </div>
+    <div class="info-modal-section">
+      <h3>資料範圍</h3>
+      <ul>
+        <li>總統副總統選舉：1996–2024</li>
+        <li>縣市長選舉：依實際選舉年度整理</li>
+        <li>直轄市長選舉：1994、1998、2002、2006 等歷史年度</li>
+      </ul>
+    </div>
+    <div class="info-modal-section">
+      <h3>資料口徑</h3>
+      <p>地圖以鄉鎮市區行政區呈現；縣市長與直轄市長資料依各選舉年度的實際行政區與選舉制度整理。不同年份的行政區名稱可能有所變動，網站會先進行名稱對齊後再呈現。</p>
+    </div>
+    <div class="info-modal-section">
+      <h3>技術與圖資</h3>
+      <p>網站使用 D3.js、ECharts、TopoJSON 等開源工具，地圖行政區圖資由 Taiwan Atlas 提供。</p>
+      <p class="release-note">本站為非官方資料視覺化專案，資料內容僅供查詢、研究與教育用途。若發現資料疑義，請以中央選舉委員會公布資料為準。</p>
+    </div>
+  </div>
+</div>
 <div class="app">
 <aside class="side">
   <button class="brand-home" id="brandHome" type="button" title="重新整理網站">
@@ -960,13 +1116,14 @@ body{
     <div class="party-key"><i class="party-dot kmt"></i><span>中國國民黨</span></div>
     <div class="party-key"><i class="party-dot tpp"></i><span>台灣民眾黨</span></div>
   </div>
+  <button class="info-button" id="infoButton" type="button">ⓘ　關於本站與資料來源</button>
   </div>
 </aside>
 
 <main class="map">
   <div class="mapbar" id="status">地圖資料載入中…</div>
   <svg id="svg"></svg>
-  <div class="map-legend"><div class="map-legend-title">地圖圖例</div><div class="map-legend-sub">色彩＝領先候選人政黨　｜　深淺＝得票率</div><div class="ramp-row"><span class="ramp-name">民主進步黨</span><span class="party-ramp dpp"></span></div><div class="ramp-row"><span class="ramp-name">中國國民黨</span><span class="party-ramp kmt"></span></div><div class="ramp-row"><span class="ramp-name">台灣民眾黨</span><span class="party-ramp tpp"></span></div><div class="opacity-ticks"><span>約25%</span><span>50%</span><span>75%</span><span>100%</span></div><div class="map-legend-note">同一政黨中，得票率越高，地圖色彩越深。</div></div><div class="zoom-controls"><button id="reset">↺</button><button id="zin">＋</button><button id="zout">－</button></div>
+  <div class="map-legend"><div class="map-legend-title">地圖圖例</div><div class="map-legend-sub">色彩＝領先候選人政黨　｜　深淺＝得票率</div><div class="map-legend-note">點擊行政區查看詳細結果；同色系越深代表得票率越高。</div><div class="ramp-row"><span class="ramp-name">民主進步黨</span><span class="party-ramp dpp"></span></div><div class="ramp-row"><span class="ramp-name">中國國民黨</span><span class="party-ramp kmt"></span></div><div class="ramp-row"><span class="ramp-name">台灣民眾黨</span><span class="party-ramp tpp"></span></div><div class="opacity-ticks"><span>約25%</span><span>50%</span><span>75%</span><span>100%</span></div><div class="map-legend-note">同一政黨中，得票率越高，地圖色彩越深。</div></div><div class="zoom-controls"><button id="reset">↺</button><button id="zin">＋</button><button id="zout">－</button></div>
 </main>
 
 <aside class="right">
@@ -990,7 +1147,7 @@ body{
   <div class="section-title legislature-title" id="legislatureTitle">當屆立法院席次</div>
   <div class="legislature-box" id="legislatureSeats"></div>
 
-  <div class="source">資料來源：中央選舉委員會公開選舉資料。總統與不分區資料彙整至鄉鎮市區；縣市長資料彙整至鄉鎮市區層級。</div>
+  <div class="source">資料來源：中央選舉委員會公開選舉資料。歷史資料經整理、標準化及行政區名稱對齊後呈現。<br><a href="https://db.cec.gov.tw/" target="_blank" rel="noopener noreferrer" style="color:#67d5ff">中選會選舉資料庫 ↗</a></div>
 </aside>
 <section class="history-panel" id="historyPanel">
   <div class="history-card" id="historyCardOverview">
@@ -1014,6 +1171,33 @@ body{
 
 <script>
 const $=id=>document.getElementById(id),svg=d3.select("#svg");
+const appLoading=$("appLoading"),loadingTitle=$("loadingTitle"),loadingText=$("loadingText"),loadingRetry=$("loadingRetry");
+const infoModal=$("infoModal"),infoButton=$("infoButton"),infoModalClose=$("infoModalClose");
+function hideLoading(){
+  appLoading?.classList.add("hidden");
+}
+function showLoadError(err){
+  console.error("Taiwan election map error:",err);
+  appLoading?.classList.remove("hidden");
+  appLoading?.classList.add("error");
+  if(loadingTitle)loadingTitle.textContent="網站載入失敗";
+  if(loadingText)loadingText.textContent="地圖或選舉資料暫時無法載入，請重新整理頁面再試一次。";
+  if(loadingRetry)loadingRetry.onclick=()=>window.location.reload();
+  if($("status"))$("status").textContent="資料載入失敗";
+}
+function closeInfoModal(){
+  infoModal?.classList.remove("open");
+  infoButton?.focus();
+}
+infoButton?.addEventListener("click",()=>{
+  infoModal?.classList.add("open");
+  infoModalClose?.focus();
+});
+infoModalClose?.addEventListener("click",closeInfoModal);
+infoModal?.addEventListener("click",e=>{if(e.target===infoModal)closeInfoModal()});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape" && infoModal?.classList.contains("open"))closeInfoModal();
+});
 $("brandHome").onclick=()=>window.location.reload();
 let g,zoom,towns=[],projection,path,selectedCode=null,electionData=null,voteShareChart=null,partyChartInstance=null,trendChartInstance=null,historyTurnoutChartInstance=null,historyShareChartInstance=null,mayorAnalysisChartInstance=null,mayorSeatChartInstance=null;
 
@@ -1128,8 +1312,14 @@ function initCustomSelects(){
     const custom=document.createElement("div");
     custom.className="custom-select";
     custom.dataset.for= id;
-    custom.innerHTML='<button type="button" class="custom-select-trigger"></button><div class="custom-select-menu"></div>';
+    custom.innerHTML='<button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false"></button><div class="custom-select-menu" role="listbox"></div>';
     wrap.appendChild(custom);
+    custom.querySelector(".custom-select-trigger").onkeydown=e=>{
+      if(e.key==="Enter"||e.key===" "){e.preventDefault();custom.querySelector(".custom-select-trigger").click()}
+      else if(e.key==="ArrowDown"){e.preventDefault();moveCustomSelect(id,1)}
+      else if(e.key==="ArrowUp"){e.preventDefault();moveCustomSelect(id,-1)}
+      else if(e.key==="Escape"){custom.classList.remove("open");refreshCustomSelect(id)}
+    };
     custom.querySelector(".custom-select-trigger").onclick=()=>{
       if(custom.classList.contains("disabled"))return;
       document.querySelectorAll(".custom-select.open").forEach(x=>{
@@ -1155,8 +1345,10 @@ function refreshCustomSelect(id){
   const options=[...select.options];
   const selected=select.options[select.selectedIndex];
   trigger.textContent=selected?.textContent||"—";
+  trigger.setAttribute("aria-expanded",custom.classList.contains("open")?"true":"false");
+  trigger.setAttribute("aria-label",selected?.textContent ? "目前選擇："+selected.textContent : "選擇"+id);
   menu.innerHTML=options.map((o,i)=>
-    '<div class="custom-select-option'+(o.selected?' selected':'')+'" data-value="'+String(o.value).replace(/"/g,'&quot;')+'">'+
+    '<div class="custom-select-option'+(o.selected?' selected':'')+'" role="option" tabindex="-1" aria-selected="'+(o.selected?"true":"false")+'" data-value="'+String(o.value).replace(/"/g,'&quot;')+'">'+
       o.textContent+
     '</div>'
   ).join("");
@@ -1170,8 +1362,25 @@ function refreshCustomSelect(id){
     };
   });
   custom.classList.toggle("disabled",!!select.disabled);
+  trigger.setAttribute("aria-disabled",select.disabled?"true":"false");
+  trigger.tabIndex=select.disabled?-1:0;
+  if(custom.classList.contains("open")){
+    const selectedOption=menu.querySelector(".custom-select-option.selected");
+    selectedOption?.scrollIntoView({block:"nearest"});
+  }
 }
 
+function moveCustomSelect(id,delta){
+  const select=$(id), custom=document.querySelector('.custom-select[data-for="'+id+'"]');
+  if(!select||select.disabled||!custom)return;
+  const options=[...select.options];
+  let idx=Math.max(0,options.findIndex(o=>o.selected));
+  idx=Math.max(0,Math.min(options.length-1,idx+delta));
+  select.value=options[idx]?.value||"";
+  select.dispatchEvent(new Event("change",{bubbles:true}));
+  refreshCustomSelect(id);
+  custom.classList.add("open");
+}
 function populateMenus(){
   const groups=d3.groups(towns,d=>d.properties.COUNTYCODE)
     .map(([code,fs])=>({code,name:fs[0].properties.COUNTYNAME,features:fs}))
@@ -2037,10 +2246,8 @@ Promise.all([
   history2020Lookup=buildHistoryLookup(electionData.president2020);
   mayor2018Lookup=electionData.mayor2018?.counties||{};
   setup(topo);
-}).catch(err=>{
-  console.error("Taiwan election map error:",err);
-  $("status").textContent="載入失敗："+(err?.message||err);
-});
+  hideLoading();
+}).catch(showLoadError);
 </script>
 </body>
 </html>
