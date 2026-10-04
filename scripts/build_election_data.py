@@ -360,7 +360,7 @@ HISTORICAL_ELECTION_NAMES = {
 
 MAYOR_ELECTION_NAMES = {
     1997: "86年縣市長選舉", 2001: "90年縣市長選舉", 2005: "94年縣市長選舉",
-    2009: "2009-2010直轄市縣市首長的選舉", 2014: "103年縣市長選舉",
+    2009: "2009、2010的縣市長選舉", 2014: "103年縣市長選舉",
     2018: "107年縣市長選舉", 2022: "111年縣市長選舉",
 }
 
@@ -664,9 +664,12 @@ def build_historical_data(town_map):
             for dirname in dirs:
                 p = Path("/tmp/cec/voteData") / dirname
                 if p.exists():
+                    # 2009 同時整併 2009 縣市長與 2010 五都市長；
+                    # 2010 原始資料夾名稱為「五都市長議員及里長」，
+                    # 因此不能用「縣市長」過濾，否則五都市長資料會被漏掉。
                     discovered = discover_bulk_sources(
                         p,
-                        keyword="縣市長" if kind == "mayor" and year == 2009 else ""
+                        keyword="縣市長" if kind == "mayor" and year == 2009 and "20091205" in str(p) else "市長" if kind == "mayor" and year == 2009 else ""
                     )
                     if discovered:
                         source_dirs.extend(discovered)
