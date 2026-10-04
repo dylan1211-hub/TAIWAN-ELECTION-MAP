@@ -4,35 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TAIWAN ELECTION MAP</title>
-<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js">
-/* UI-POLISH-V1 behavior */
-(function(){
-  const partyClass=p=>{const v=String(p||"");if(v.includes("民主進步黨"))return "dpp";if(v.includes("中國國民黨"))return "kmt";if(v.includes("台灣民眾黨"))return "tpp";return "other"};
-  const decorate=()=>{
-    document.querySelectorAll(".history-meta").forEach(el=>{const t=el.textContent||"";const p=["民主進步黨","中國國民黨","台灣民眾黨","親民黨"].find(x=>t.includes(x));el.classList.add("party-text",partyClass(p))});
-    const wp=document.querySelector(".winner-party");if(wp)wp.classList.add("party-text",partyClass(wp.textContent));
-    const card=document.getElementById("winnerCard");const party=wp?.textContent||"";card?.classList.remove("party-dpp","party-kmt","party-tpp","party-other");if(party)card.classList.add("party-"+partyClass(party));
-  };
-  const updateFilterCurrent=()=>{const el=document.getElementById("filterCurrent");if(!el)return;const type=document.getElementById("electionType")?.selectedOptions?.[0]?.textContent||"";const year=document.getElementById("year")?.selectedOptions?.[0]?.textContent||"";const county=document.getElementById("county")?.selectedOptions?.[0]?.textContent||"全臺";const town=document.getElementById("town")?.selectedOptions?.[0]?.textContent||"";el.textContent=year+" · "+type+(county&&county!=="全臺"?" · "+county:"")+(town&&town!=="選擇鄉鎮市區…"?" · "+town:"")};
-  const oldUpdate=window.updatePanel;if(typeof oldUpdate==="function"){window.updatePanel=function(name,data){oldUpdate(name,data);decorate();updateFilterCurrent()}};
-  const clear=document.getElementById("clearSelectionUi");
-  clear?.addEventListener("click",()=>{
-    clearSelection();
-    selectedFeatures=towns;
-    selectedCode=null;
-    const county=document.getElementById("county");
-    const town=document.getElementById("town");
-    if(county)county.value="";
-    updateTownMenu("");
-    if(town)town.value="";
-    zoomTo(towns);
-    updatePanel("全臺",activeDataset?.national);
-    updateFilterCurrent();
-  });
-  ["electionType","year","county","town"].forEach(id=>document.getElementById(id)?.addEventListener("change",updateFilterCurrent));
-  updateFilterCurrent();decorate();
-})();
-</script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js"></script>
 <style>
@@ -84,7 +56,10 @@ body::-webkit-scrollbar-track,.side::-webkit-scrollbar-track,.right::-webkit-scr
 body::-webkit-scrollbar-thumb,.side::-webkit-scrollbar-thumb,.right::-webkit-scrollbar-thumb,.mayor-analysis-scroll::-webkit-scrollbar-thumb{background:#33445a;border-radius:99px;border:1px solid #0a111a}
 body::-webkit-scrollbar-thumb:hover,.side::-webkit-scrollbar-thumb:hover,.right::-webkit-scrollbar-thumb:hover,.mayor-analysis-scroll::-webkit-scrollbar-thumb:hover{background:#4a5e78}
 .app{grid-template-columns:246px minmax(0,1fr) 350px;grid-template-rows:minmax(0,1fr) 292px}
-.side,.right{padding:16px 17px}.side{background:linear-gradient(180deg,#0c131d,#0a111a);border-right:1px solid #202d3d;overflow-y:auto}.right{background:#0b121b;border-left:1px solid #202d3d;overflow-y:auto}
+.side,.right{padding:16px 17px}.side{background:linear-gradient(180deg,#0c131d,#0a111a);border-right:1px solid #202d3d;overflow-y:auto;position:relative}.right{background:#0b121b;border-left:1px solid #202d3d;overflow-y:auto;position:relative}
+.brand{position:sticky;top:-16px;z-index:20;margin:-16px -17px 11px;padding:16px 17px 11px;background:linear-gradient(180deg,#0c131d 78%,rgba(12,19,29,.96));border-bottom:1px solid #202d3d}
+.right-sticky-summary{position:sticky;top:-16px;z-index:20;margin:-16px -17px 10px;padding:16px 17px 9px;background:linear-gradient(180deg,#0b121b 84%,rgba(11,18,27,.97));border-bottom:1px solid #202d3d;box-shadow:0 8px 18px rgba(0,0,0,.16)}
+.right-sticky-summary .winner-card{margin-bottom:0}
 .map{background:#060b12}.mapbar{left:16px;top:14px;padding:8px 11px;background:#0a111ae0;border-color:#314156;border-radius:10px;box-shadow:0 8px 24px #0005;color:#b3c0cf}.map-legend{left:16px;bottom:16px;width:215px;padding:11px 12px;background:#0a111ae8;border-color:#314156}
 .zoom-controls{right:16px;bottom:16px}.zoom-controls button{width:32px;height:32px;border-radius:9px;background:#0d1722;border-color:#314156;box-shadow:0 5px 15px #0005;cursor:pointer}.zoom-controls button:hover{background:#172535;border-color:#48617e}
 .brand{display:flex;align-items:flex-start;gap:10px;padding:3px 2px 11px}.brand-mark{width:30px;height:30px;border:1px solid #38516a;border-radius:9px;display:grid;place-items:center;font-size:9px;font-weight:800;letter-spacing:.08em;color:#bfeaff;background:#0d1c29}.brand h1{font-size:15px;letter-spacing:.075em;line-height:1.1;margin:2px 0 4px}.brand .sub{font-size:10px;margin:0;color:#718198}
@@ -96,7 +71,7 @@ body::-webkit-scrollbar-thumb:hover,.side::-webkit-scrollbar-thumb:hover,.right:
 .history-panel{padding:10px 14px;gap:10px;background:#0a111a;border-top:1px solid #202e3e;grid-template-columns:1.05fr 1fr 1.3fr;align-items:stretch}.history-card{padding:10px;border-radius:11px;background:#101a27;border-color:#293b50;display:flex;flex-direction:column;min-height:0}.history-head{margin-bottom:7px}.history-title{font-size:11px}.history-sub{font-size:8px;margin-top:3px}.history-chart{height:225px;min-height:0;flex:1}.history-cards{grid-template-columns:repeat(4,1fr);gap:6px}.history-year-card{padding:7px;border-radius:8px;background:#0d1722;border-color:#24364a}.history-year{font-size:8px}.history-winner{font-size:13px;margin-top:3px}.history-meta{font-size:8px;margin-top:2px}.history-stat{font-size:8px;margin-top:3px}.mayor-analysis-scroll{height:230px;min-height:0;flex:1;position:relative;padding-right:6px}.mayor-analysis-scroll:after{content:"向下查看更多";position:sticky;bottom:2px;display:block;width:max-content;margin:0 auto;padding:3px 7px;border:1px solid #304257;border-radius:99px;background:#0c1621e8;color:#72859b;font-size:7px;pointer-events:none}.mayor-only{height:430px}.mayor-seat-chart{height:230px;min-height:0;flex:1}.history-panel.mayor-layout{grid-template-columns:1.15fr 1fr}.history-panel.mayor-layout .history-card{min-width:0}.history-panel.mayor-layout .mayor-seat-card,.history-panel.mayor-layout .mayor-seat-card[style]{display:flex!important}.history-panel .echarts{overflow:hidden}
 .party-text.dpp{color:var(--green)!important}.party-text.kmt{color:var(--blue)!important}.party-text.tpp{color:var(--tpp)!important}.party-text.other{color:#93a0b1!important}.winner-card.party-dpp{border-color:#1b9e3f66;box-shadow:inset 3px 0 0 var(--green),0 8px 22px #0003}.winner-card.party-kmt{border-color:#2f6fd666;box-shadow:inset 3px 0 0 var(--blue),0 8px 22px #0003}.winner-card.party-tpp{border-color:#19a7ce66;box-shadow:inset 3px 0 0 var(--tpp),0 8px 22px #0003}
 @media (max-width:1200px){.app{grid-template-columns:220px minmax(0,1fr) 320px;grid-template-rows:minmax(0,1fr) 300px}.history-panel{grid-template-columns:1fr 1fr}.history-card#historyCardShare{display:none}}
-@media (max-width:900px){body{overflow:auto}.app{height:auto;min-height:100vh;display:grid;grid-template-columns:1fr;grid-template-rows:auto 55vh auto auto}.side{border-right:0;border-bottom:1px solid #202d3d;overflow:visible}.right{border-left:0;border-top:1px solid #202d3d;overflow:visible}.map{min-height:55vh}.history-panel{grid-row:auto;grid-template-columns:1fr!important;height:auto;overflow:visible}.history-card{min-height:260px}.mayor-seat-card{display:flex}}
+@media (max-width:900px){body{overflow:auto}.app{height:auto;min-height:100vh;display:grid;grid-template-columns:1fr;grid-template-rows:auto 55vh auto auto}.side{border-right:0;border-bottom:1px solid #202d3d;overflow:visible}.right{border-left:0;border-top:1px solid #202d3d;overflow:visible}.brand,.right-sticky-summary{position:static;margin:0;padding:0 0 11px;background:transparent;border-bottom:0;box-shadow:none}.map{min-height:55vh}.history-panel{grid-row:auto;grid-template-columns:1fr!important;height:auto;overflow:visible}.history-card{min-height:260px}.mayor-seat-card{display:flex}}
 
 /* UI-POLISH-V2: party semantics */
 .winner-name.party-dpp,.winner-party.party-dpp,.party-text.dpp{color:#1b9e3f!important}
@@ -115,8 +90,6 @@ body::-webkit-scrollbar-thumb:hover,.side::-webkit-scrollbar-thumb:hover,.right:
     </div>
   </div>
 
-  <div class="side-section-label">資料選擇</div>
-  <div class="filter-current" id="filterCurrent">2024 · 總統副總統</div>
   <details class="filter-panel" open>
     <summary>
       <span><strong>選舉與區域</strong><small>依序選擇即可更新地圖</small></span>
@@ -178,11 +151,12 @@ body::-webkit-scrollbar-thumb:hover,.side::-webkit-scrollbar-thumb:hover,.right:
 </main>
 
 <aside class="right">
-  <div class="title">目前選取</div>
-  <div class="place" id="place">全臺</div>
-  <div class="badge" id="dataBadge">2024 總統副總統</div>
-
-  <div class="winner-card" id="winnerCard"></div>
+  <div class="right-sticky-summary">
+    <div class="title">目前選取</div>
+    <div class="place" id="place">全臺</div>
+    <div class="badge" id="dataBadge">2024 總統副總統</div>
+    <div class="winner-card" id="winnerCard"></div>
+  </div>
 
   <div class="metric"><span>有效票</span><span id="validVotes">—</span></div>
   <div class="data-level" id="dataLevel">資料層級：全臺</div>
@@ -646,7 +620,8 @@ function renderHistory(){
   mayorSeats.style.gridRow="";
   cards.style.display="";
   mayorChart.style.display="none";
-  panel.querySelector(".history-sub").textContent="1996–2024 全國總統副總統選舉";
+  panel.querySelector(".history-title").textContent="歷年總統當選人統計";
+  panel.querySelector(".history-sub").textContent="1996–2024 全國總統副總統選舉｜當選人與得票率";
   const history=electionData?.presidents||{};
   const stats=electionData?.presidentHistory||{};
   const years=Object.keys(history).map(Number).sort((a,b)=>a-b);
@@ -655,7 +630,8 @@ function renderHistory(){
     const s=history[y];
     const meta=stats[y]||stats[String(y)]||{};
     const lead=(meta?.candidates?.[0]||s?.candidates?.[0]);
-    return '<div class="history-year-card"><div class="history-year">'+y+'</div><div class="history-winner">'+(lead?.name||"—")+'</div><div class="history-meta">'+(lead?.party||"—")+'　'+(lead?.share?.toFixed(2)||"—")+'%</div><div class="history-stat">投票率 '+(meta?.turnout?.toFixed(2)||"—")+'%</div><div class="history-stat">有效票 '+fmt(meta?.validVotes||0)+'</div></div>';
+    const color=partyColor(lead?.party);
+    return '<div class="history-year-card"><div class="history-year">'+y+'</div><div class="history-winner" style="color:'+color+'">'+(lead?.name||"—")+'</div><div class="history-meta" style="color:'+color+'">'+(lead?.party||"—")+'　'+(lead?.share?.toFixed(2)||"—")+'%</div><div class="history-stat">投票率 '+(meta?.turnout?.toFixed(2)||"—")+'%</div><div class="history-stat">有效票 '+fmt(meta?.validVotes||0)+'</div></div>';
   }).join("");
   if(!historyTurnoutChartInstance)historyTurnoutChartInstance=echarts.init($("historyTurnoutChart"),"dark");
   historyTurnoutChartInstance.setOption({
@@ -760,10 +736,10 @@ function renderMayorHistory(){
     },
     legend:{top:0,left:"center",textStyle:{color:"#9aa8ba",fontSize:9},itemWidth:10,itemHeight:7},
     series:[
-      {name:"民主進步黨",type:"bar",stack:"total",data:barData("dpp")},
-      {name:"中國國民黨",type:"bar",stack:"total",data:barData("kmt")},
-      {name:"台灣民眾黨",type:"bar",stack:"total",data:barData("tpp")},
-      {name:"其他",type:"bar",stack:"total",data:barData("other")}
+      {name:"民主進步黨",type:"bar",stack:"total",data:barData("dpp"),itemStyle:{color:partyColor("民主進步黨")}},
+      {name:"中國國民黨",type:"bar",stack:"total",data:barData("kmt"),itemStyle:{color:partyColor("中國國民黨")}},
+      {name:"台灣民眾黨",type:"bar",stack:"total",data:barData("tpp"),itemStyle:{color:partyColor("台灣民眾黨")}},
+      {name:"其他",type:"bar",stack:"total",data:barData("other"),itemStyle:{color:"#738196"}}
     ]
   },true);
 }
@@ -916,6 +892,9 @@ function renderWinner(name){
     return;
   }
   const winnerColor=partyColor(winner.party);
+  el.classList.remove("party-dpp","party-kmt","party-tpp","party-other");
+  const winnerPartyClass=winner.party?.includes("民主進步黨")?"party-dpp":winner.party?.includes("中國國民黨")?"party-kmt":winner.party?.includes("台灣民眾黨")?"party-tpp":"party-other";
+  el.classList.add(winnerPartyClass);
   el.innerHTML='<div class="winner-label">'+winner.label+'</div>'+
     '<div class="winner-name" style="color:'+winnerColor+'">'+winner.name+'</div>'+
     '<div class="winner-party" style="color:'+winnerColor+'">'+winner.party+'</div>'+
@@ -1038,6 +1017,28 @@ window.addEventListener("resize",()=>{
   if(mayorAnalysisChartInstance)mayorAnalysisChartInstance.resize();
   if(mayorSeatChartInstance)mayorSeatChartInstance.resize();
 });
+
+function updateUiPartyClasses(){
+  const wp=document.querySelector(".winner-party");
+  const card=document.getElementById("winnerCard");
+  const party=wp?.textContent||"";
+  const cls=party.includes("民主進步黨")?"dpp":party.includes("中國國民黨")?"kmt":party.includes("台灣民眾黨")?"tpp":"other";
+  card?.classList.remove("party-dpp","party-kmt","party-tpp","party-other");
+  if(party)card?.classList.add("party-"+cls);
+}
+function clearAreaSelection(){
+  clearSelection();
+  selectedFeatures=towns;
+  selectedCode=null;
+  const county=$("county"), town=$("town");
+  if(county)county.value="";
+  updateTownMenu("");
+  if(town)town.value="";
+  zoomTo(towns);
+  updatePanel("全臺",activeDataset?.national);
+  updateUiPartyClasses();
+}
+$("clearSelectionUi").onclick=clearAreaSelection;
 
 Promise.all([
   fetch(MAP_URL).then(r=>{if(!r.ok)throw new Error("地圖 HTTP "+r.status);return r.json()}),
