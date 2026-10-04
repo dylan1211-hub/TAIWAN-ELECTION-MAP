@@ -96,6 +96,8 @@ jobs:
           with open(out,encoding="utf-8") as f:
               data=json.load(f)
           data["mayor"]["towns"].update(towns)
+          if "2022" in data.get("mayors", {}):
+              data["mayors"]["2022"].setdefault("towns", {}).update(towns)
           with open(out,"w",encoding="utf-8") as f:
               json.dump(data,f,ensure_ascii=False,separators=(",",":"))
           print("Chiayi mayor districts:", len(towns))
