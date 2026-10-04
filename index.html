@@ -1448,8 +1448,8 @@ function mayorPlaceKey(county,town){
 function townResult(code){
   const f=towns.find(x=>String(x.properties.TOWNCODE)===String(code));
   if(!f)return null;
-  if(activeKey==="mayor"){
-    const direct=activeDataset?._townLookup?.[String(code)]||null;
+  if(activeKey==="mayor" || activeKey==="metroMayor"){
+    const direct=activeDataset?._townLookup?.[String(code)]||activeDataset?._townLookup?.[String(code).slice(0,8)]||null;
     if(direct)return direct;
     return mayorNameLookup[mayorPlaceKey(f.properties.COUNTYNAME,f.properties.TOWNNAME)]||null;
   }
@@ -1588,7 +1588,7 @@ function renderPie(data){
 
   // ECharts owns the contents of this element. Never replace innerHTML while an
   // instance is alive; doing so detaches the canvas and makes later clicks fail.
-  if(activeKey==="mayor" && $("place").textContent==="全臺"){
+  if((activeKey==="mayor" || activeKey==="metroMayor") && $("place").textContent==="全臺"){
     if(voteShareChart){ voteShareChart.dispose(); voteShareChart=null; }
     el.innerHTML='<div class="empty" style="text-align:center;padding-top:55px">請選擇縣市或鄉鎮市區<br>查看該選區候選人得票率</div>';
     return;
@@ -1665,7 +1665,7 @@ function renderRegionKpis(data){
   const box=$("regionKpis");
   if(!box)return;
   if(activeKey==="mayor" && $("place").textContent==="全臺"){
-    box.innerHTML='<div class="empty" style="grid-column:1/-1">縣市長為各縣市分別選舉，無單一「全臺候選人得票率」。<br>請選擇縣市或鄉鎮市區查看詳細結果。</div>';
+    box.innerHTML='<div class="empty" style="grid-column:1/-1">'+(activeKey==="metroMayor"?"直轄市長為臺北市、高雄市分別選舉，無單一「全臺候選人得票率」。":"縣市長為各縣市分別選舉，無單一「全臺候選人得票率」。")+'<br>請選擇縣市或鄉鎮市區查看詳細結果。</div>';
     return;
   }
   const leader=data?.candidates?.[0];
@@ -2160,6 +2160,13 @@ function setElectionType(){
   partyTownLookup=buildPartyTownLookup();
   mayorNameLookup={};
   Object.values(activeDataset?.towns||{}).forEach(row=>{mayorNameLookup[mayorPlaceKey(row.county,row.town)]=row;});
+  // 切換選舉類型時清除上一種選舉的圖表實例，避免殘留前一頁資料。
+  if(voteShareChart){voteShareChart.dispose();voteShareChart=null;}
+  if(partyChartInstance){partyChartInstance.dispose();partyChartInstance=null;}
+  if(historyTurnoutChartInstance){historyTurnoutChartInstance.dispose();historyTurnoutChartInstance=null;}
+  if(historyShareChartInstance){historyShareChartInstance.dispose();historyShareChartInstance=null;}
+  if(mayorAnalysisChartInstance){mayorAnalysisChartInstance.dispose();mayorAnalysisChartInstance=null;}
+  if(mayorSeatChartInstance){mayorSeatChartInstance.dispose();mayorSeatChartInstance=null;}
   applyElectionColors();zoomTo(towns);updatePanel("全臺",activeDataset?.national);
   $("status").textContent="行政區地圖｜"+(activeDataset?.year||"")+" "+(activeDataset?.election||"")+"｜鄉鎮市區層級";
 }
