@@ -28,8 +28,8 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
 .town-border{fill:none;stroke:#536174;stroke-width:.58;pointer-events:none}
 .county-border{fill:none;stroke:#7e8a9b;stroke-width:.85;pointer-events:none}
 .nation-border{fill:none;stroke:#c5d0dc;stroke-width:1.05;pointer-events:none}
-.zoom-controls{position:absolute;right:18px;bottom:18px;display:flex;gap:6px}
-.zoom-controls button{width:34px;height:34px;background:#0d131d;border:1px solid var(--line);color:var(--text);border-radius:7px}
+.zoom-controls{position:absolute;right:18px;bottom:18px;display:flex;gap:6px;z-index:10;pointer-events:auto}
+.zoom-controls button{position:relative;z-index:11;width:34px;height:34px;background:#0d131d;border:1px solid var(--line);color:var(--text);border-radius:7px}
 .title{font-size:11px;color:var(--muted);margin-bottom:5px}.place{font-size:25px;font-weight:650;margin-bottom:18px}
 .metric{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:10px 0;font-size:13px}
 .metric span:last-child{font-variant-numeric:tabular-nums}
@@ -679,18 +679,67 @@ body{
   .history-cards{grid-template-columns:1fr 1fr}
 }
 
+
+/* INTERACTION-UX-V1 */
+.brand-home{
+  width:100%;
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:3px 2px 11px;
+  margin:0;
+  border:0;
+  border-bottom:1px solid #174d70;
+  color:inherit;
+  background:transparent;
+  text-align:left;
+  cursor:pointer;
+  font:inherit;
+  appearance:none;
+  -webkit-appearance:none;
+  position:relative;
+}
+.brand-home::after{
+  content:"↻";
+  position:absolute;
+  right:4px;
+  top:8px;
+  color:#39718d;
+  font-size:13px;
+  opacity:0;
+  transform:rotate(-20deg);
+  transition:opacity .16s,transform .16s,color .16s;
+}
+.brand-home:hover{
+  background:linear-gradient(90deg,rgba(32,215,255,.035),transparent);
+}
+.brand-home:hover::after{
+  opacity:1;
+  color:#20d7ff;
+  transform:rotate(0);
+}
+.brand-home:hover .brand-mark{
+  border-color:#20d7ff;
+  box-shadow:0 0 14px rgba(32,215,255,.18),inset 0 0 12px rgba(32,215,255,.06);
+}
+.brand-home:focus-visible{
+  outline:2px solid #20d7ff;
+  outline-offset:3px;
+  border-radius:6px;
+}
+
 </style>
 </head>
 <body>
 <div class="app">
 <aside class="side">
-  <div class="brand">
+  <button class="brand-home" id="brandHome" type="button" title="重新整理網站">
     <div class="brand-mark">TEM</div>
     <div>
       <h1>TAIWAN ELECTION MAP</h1>
       <div class="sub">臺灣歷年選舉地圖資料平台</div>
     </div>
-  </div>
+  </button>
 
   <details class="filter-panel" open>
     <summary>
@@ -797,6 +846,7 @@ body{
 
 <script>
 const $=id=>document.getElementById(id),svg=d3.select("#svg");
+$("brandHome").onclick=()=>window.location.reload();
 let g,zoom,towns=[],projection,path,selectedCode=null,electionData=null,voteShareChart=null,partyChartInstance=null,trendChartInstance=null,historyTurnoutChartInstance=null,historyShareChartInstance=null,mayorAnalysisChartInstance=null,mayorSeatChartInstance=null;
 
 const MAP_URL="https://cdn.jsdelivr.net/npm/taiwan-atlas@2021.9.20/towns-10t.json";
