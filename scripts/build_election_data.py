@@ -423,45 +423,75 @@ def merge_bulk_results(results, town_map, kind, year):
     """Merge multiple CEC source folders for one election year."""
     merged = {}
     national = defaultdict(lambda: {"party": "", "votes": 0})
+
     for result in results:
         for code, row in result.get("towns", {}).items():
             if code not in merged:
-                merged[code] = {"county": row["county"], "town": row["town"], "totalVotes": 0, "candidates": {}}
+                merged[code] = {
+                    "county": row["county"],
+                    "town": row["town"],
+                    "totalVotes": 0,
+                    "candidates": {}
+                }
+
             out = merged[code]
             out["totalVotes"] += int(row.get("totalVotes", 0) or 0)
-            for cand in row.get("candidates", []):
+
+            candidates = row.get("candidates", [])
+            # aggregate_bulk_election currently returns a list; accept a dict
+            # too so this merge remains robust against intermediate structures.
+            if isinstance(candidates, dict):
+                candidates = list(candidates.values())
+
+            for cand in candidates:
                 key = cand["name"]
                 if key not in out["candidates"]:
-                    out["candidates"][key] = {"name": key, "party": cand.get("party", ""), "votes": 0}
+                    out["candidates"][key] = {
+                        "name": key,
+                        "party": cand.get("party", ""),
+                        "votes": 0
+                    }
                 out["candidates"][key]["votes"] += int(cand.get("votes", 0) or 0)
+
         for cand in result.get("national", {}).get("candidates", []):
             key = cand["name"]
             national[key]["party"] = cand.get("party", "")
             national[key]["votes"] += int(cand.get("votes", 0) or 0)
+
     towns = {}
     for code, row in merged.items():
         candidates = sorted(row["candidates"].values(), key=lambda x: -x["votes"])
         total = row["totalVotes"]
         towns[code] = {
-            "county": row["county"], "town": row["town"], "totalVotes": total,
-            "candidates": [{**x, "share": round(x["votes"] / total * 100, 2) if total else 0} for x in candidates]
+            "county": row["county"],
+            "town": row["town"],
+            "totalVotes": total,
+            "candidates": [
+                {
+                    **x,
+                    "share": round(x["votes"] / total * 100, 2) if total else 0
+                }
+                for x in candidates
+            ]
         }
-    # 同一現行行政區若由多個歷史行政區合併，重新計算該區候選人得票率。
-    for key_code, target in output.items():
-        candidates = sorted(target["candidates"].values(), key=lambda x: -x["votes"])
-        total_votes = target["totalVotes"]
-        target["candidates"] = [
-            {**x, "share": round(x["votes"] / total_votes * 100, 2) if total_votes else 0}
-            for x in candidates
-        ]
 
     total = sum(v["votes"] for v in national.values())
     national_rows = [
-        {"name": n, "party": v["party"], "votes": v["votes"], "share": round(v["votes"] / total * 100, 2) if total else 0}
+        {
+            "name": n,
+            "party": v["party"],
+            "votes": v["votes"],
+            "share": round(v["votes"] / total * 100, 2) if total else 0
+        }
         for n, v in sorted(national.items(), key=lambda x: -x[1]["votes"])
     ]
-    return {"year": year, "election": HISTORICAL_ELECTION_NAMES.get(year) if kind == "president" else MAYOR_ELECTION_NAMES.get(year),
-            "national": {"totalVotes": total, "candidates": national_rows}, "towns": towns}
+
+    return {
+        "year": year,
+        "election": HISTORICAL_ELECTION_NAMES.get(year) if kind == "president" else MAYOR_ELECTION_NAMES.get(year),
+        "national": {"totalVotes": total, "candidates": national_rows},
+        "towns": towns
+    }
 
 def aggregate_bulk_sources(source_dirs, town_map, kind, year):
     if isinstance(source_dirs, (str, Path)):
