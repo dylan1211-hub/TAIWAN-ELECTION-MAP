@@ -4,7 +4,7 @@
 
 ## 網站
 
-url開啟 TAIWAN ELECTION MAPhttps://dylan1211-hub.github.io/TAIWAN-ELECTION-MAP/
+[開啟 TAIWAN ELECTION MAP](https://dylan1211-hub.github.io/TAIWAN-ELECTION-MAP/)
 
 ## 目前功能
 
@@ -21,7 +21,7 @@
 
 選舉資料主要整理自 **中央選舉委員會公開選舉資料**。
 
-url中央選舉委員會選舉資料庫https://db.cec.gov.tw/
+[中央選舉委員會選舉資料庫](https://db.cec.gov.tw/)
 
 網站會針對不同年度的資料進行欄位整理、候選人資料標準化及行政區名稱對齊，再以統一格式呈現。
 
