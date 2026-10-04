@@ -959,7 +959,7 @@ function selectCountyByCode(code){
   if(!code){
     updateTownMenu("");
     zoomTo(towns);
-    selectedFeatures=towns;
+    selectedFeatures=[];
     updatePanel("全臺",activeDataset?.national);
     return;
   }
@@ -1002,7 +1002,7 @@ function setElectionType(){
   $("year").value=years.includes(current)?String(current):String(years[0]||current);
   activeDataset=prepareDataset(datasetFor(activeKey,$("year").value));
   $("town").disabled=false;$("town").title="";
-  selectedCode=null;selectedFeatures=towns;clearSelection();
+  selectedCode=null;selectedFeatures=[];clearSelection();
   partyTownLookup=buildPartyTownLookup();
   mayorNameLookup={};
   Object.values(activeDataset?.towns||{}).forEach(row=>{mayorNameLookup[mayorPlaceKey(row.county,row.town)]=row;});
@@ -1021,7 +1021,7 @@ $("year").onchange=()=>{
   }
 
   selectedCode=null;
-  selectedFeatures=towns;
+  selectedFeatures=[];
   clearSelection();
   $("county").value="";
   updateTownMenu("");
@@ -1055,7 +1055,7 @@ function updateUiPartyClasses(){
 }
 function clearAreaSelection(){
   clearSelection();
-  selectedFeatures=towns;
+  selectedFeatures=[];
   selectedCode=null;
   const county=$("county"), town=$("town");
   if(county)county.value="";
@@ -1074,7 +1074,7 @@ Promise.all([
   electionData=data;
   // 初始畫面與年份切換共用同一套資料取得流程。
   activeDataset=prepareDataset(datasetFor("president",2024));
-  selectedFeatures=towns;
+  selectedFeatures=[];
   if(!activeDataset) throw new Error("找不到 2024 總統資料");
   mayorNameLookup={};
   Object.values(electionData.mayor.towns||{}).forEach(row=>{
