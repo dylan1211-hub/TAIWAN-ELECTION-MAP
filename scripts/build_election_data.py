@@ -349,6 +349,12 @@ HISTORICAL_SOURCES = {
         2018: ["2018-107年地方公職人員選舉/直轄市市長", "2018-107年地方公職人員選舉/縣市市長"],
         2022: [],
     },
+    "metroMayor": {
+        1994: ["1994直轄市長"],
+        1998: ["1998直轄市長"],
+        2002: ["2002直轄市長"],
+        2006: ["2006直轄市長"],
+    },
 }
 
 HISTORICAL_ELECTION_NAMES = {
@@ -362,6 +368,12 @@ MAYOR_ELECTION_NAMES = {
     1997: "86年縣市長選舉", 2001: "90年縣市長選舉", 2005: "94年縣市長選舉",
     2009: "2009、2010的縣市長選舉", 2014: "103年縣市長選舉",
     2018: "107年縣市長選舉", 2022: "111年縣市長選舉",
+}
+METRO_MAYOR_ELECTION_NAMES = {
+    1994: "83年直轄市長選舉",
+    1998: "87年直轄市長選舉",
+    2002: "91年直轄市長選舉",
+    2006: "95年直轄市長選舉",
 }
 
 def normalize_admin_name(v):
@@ -635,7 +647,8 @@ def aggregate_bulk_election(source_dir, town_map, kind, year):
             for x in candidates
         ]
 
-    return {"year":year, "election":HISTORICAL_ELECTION_NAMES.get(year) if kind=="president" else MAYOR_ELECTION_NAMES.get(year), "national":{"totalVotes":total,"candidates":national_rows}, "towns":output}
+    election_names = HISTORICAL_ELECTION_NAMES if kind=="president" else METRO_MAYOR_ELECTION_NAMES if kind=="metroMayor" else MAYOR_ELECTION_NAMES
+    return {"year":year, "election":election_names.get(year), "national":{"totalVotes":total,"candidates":national_rows}, "towns":output}
 
 def discover_bulk_sources(root, keyword=""):
     """Find CEC bulk-election folders below a legacy year directory."""
@@ -653,7 +666,7 @@ def discover_bulk_sources(root, keyword=""):
     return found
 
 def build_historical_data(town_map):
-    presidents, mayors = {}, {}
+    presidents, mayors, metro_mayors = {}, {}, {}
     # Build county lookup from each source's elbase before reading vote totals.
     for kind, years in HISTORICAL_SOURCES.items():
         for year, dirs in years.items():
@@ -699,15 +712,20 @@ def build_historical_data(town_map):
                 result = aggregate_bulk_sources(source_dirs, town_map, kind, year)
             else:
                 result = aggregate_bulk_election(source_dirs[0] if source_dirs else found, town_map, kind, year)
-            (presidents if kind=="president" else mayors)[year] = result
-    return presidents, mayors
+            if kind=="president":
+                presidents[year] = result
+            elif kind=="mayor":
+                mayors[year] = result
+            else:
+                metro_mayors[year] = result
+    return presidents, mayors, metro_mayors
 import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--town-map", default="")
 args = parser.parse_args()
 town_map = load_current_town_map(args.town_map)
-presidents, mayors = build_historical_data(town_map)
+presidents, mayors, metro_mayors = build_historical_data(town_map)
 
 president_2024 = aggregate_village_results("2024總統")
 president_2020 = aggregate_village_results("2020總統")
@@ -745,7 +763,8 @@ payload = {
     "presidentHistory": OFFICIAL_PRESIDENT_HISTORY,
     "presidents": presidents,
     "mayors": mayors,
-    "availableYears": {"president": sorted(presidents.keys()), "mayor": sorted(mayors.keys())},
+    "availableYears": {"president": sorted(presidents.keys()), "mayor": sorted(mayors.keys()), "metroMayor": sorted(metro_mayors.keys())},
+    "metroMayors": metro_mayors,
     "partylist": {
         "year": 2024,
         "election": "第11屆立法委員全國不分區及僑居國外國民選舉",
