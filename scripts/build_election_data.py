@@ -391,10 +391,24 @@ def read_csv_rows(path):
         for row in csv.reader(f):
             yield [str(x).strip().strip('"').lstrip("'") for x in row]
 
+HISTORICAL_TOWN_ALIASES = {
+    # 行政區改制後名稱變更
+    ("苗栗縣", "頭份鎮"): "頭份市",
+    ("彰化縣", "員林鎮"): "員林市",
+    # 臺南市中區、西區於 2004 年合併為中西區
+    ("臺南市", "中區"): "中西區",
+    ("臺南市", "西區"): "中西區",
+}
+
+def canonical_town_name(county, town):
+    county = normalize_admin_name(county)
+    town = normalize_admin_name(town)
+    return HISTORICAL_TOWN_ALIASES.get((county, town), town)
+
 def town_map_code(town_map, county, town):
     """Match historical CEC administrative names to the current town map."""
     county = normalize_admin_name(county)
-    town = normalize_admin_name(town)
+    town = canonical_town_name(county, town)
     candidates = [town]
     merged_cities = {"新北市", "桃園市", "臺中市", "臺南市", "高雄市"}
     if county in merged_cities and town and not town.endswith("區"):
@@ -432,6 +446,15 @@ def merge_bulk_results(results, town_map, kind, year):
             "county": row["county"], "town": row["town"], "totalVotes": total,
             "candidates": [{**x, "share": round(x["votes"] / total * 100, 2) if total else 0} for x in candidates]
         }
+    # 同一現行行政區若由多個歷史行政區合併，重新計算該區候選人得票率。
+    for key_code, target in output.items():
+        candidates = sorted(target["candidates"].values(), key=lambda x: -x["votes"])
+        total_votes = target["totalVotes"]
+        target["candidates"] = [
+            {**x, "share": round(x["votes"] / total_votes * 100, 2) if total_votes else 0}
+            for x in candidates
+        ]
+
     total = sum(v["votes"] for v in national.values())
     national_rows = [
         {"name": n, "party": v["party"], "votes": v["votes"], "share": round(v["votes"] / total * 100, 2) if total else 0}
@@ -542,11 +565,20 @@ def aggregate_bulk_election(source_dir, town_map, kind, year):
             continue
         rows = sorted(item["candidates"].items(), key=lambda x: -x[1]["votes"])
         total = sum(v["votes"] for _, v in rows)
-        output[str(code)] = {
-            "county": normalize_admin_name(county), "town": normalize_admin_name(town),
-            "totalVotes": total,
-            "candidates": [{"name":n,"party":v["party"],"votes":v["votes"],"share":round(v["votes"]/total*100,2) if total else 0} for n,v in rows]
-        }
+        canonical_town = canonical_town_name(county, town)
+        key_code = str(code)
+        if key_code not in output:
+            output[key_code] = {
+                "county": normalize_admin_name(county), "town": canonical_town,
+                "totalVotes": 0,
+                "candidates": {}
+            }
+        target = output[key_code]
+        target["totalVotes"] += total
+        for n, v in rows:
+            if n not in target["candidates"]:
+                target["candidates"][n] = {"name": n, "party": v["party"], "votes": 0}
+            target["candidates"][n]["votes"] += v["votes"]
         for n,v in rows:
             national[n]["party"] = v["party"]
             national[n]["votes"] += v["votes"]
