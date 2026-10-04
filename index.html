@@ -1640,7 +1640,7 @@ function renderMayorHistory(){
   const metro=activeKey==="metroMayor";
   $("historyCardOverview").querySelector(".history-title").textContent=metro?"直轄市長選舉分析":"縣市長選舉分析";
   $("historyCardOverview").querySelector(".history-sub").textContent=
-    (activeDataset?.year||"")+" 各直轄市政黨得票率｜依當年資料比較"+
+    (activeDataset?.year||"")+" "+(metro?"各直轄市":"各縣市")+"政黨得票率｜依當年資料比較"+
     (selectedCounty ? "｜目前選取："+selectedCounty : "");
 
   $("historyCards").innerHTML="";
@@ -1817,12 +1817,12 @@ function getWinnerForCurrentView(name){
 
   if(name==="全臺"){
     return {
-      label:"縣市長選舉",
-      name:"各縣市分別選出",
+      label:activeKey==="metroMayor"?"直轄市長選舉":"縣市長選舉",
+      name:activeKey==="metroMayor"?"臺北市、高雄市分別選出":"各縣市分別選出",
       party:"",
       share:null,
       votes:null,
-      note:"縣市長並非全臺單一席次；請選擇縣市查看該縣市當選人。"
+      note:activeKey==="metroMayor"?"直轄市長並非全臺單一席次；請選擇縣市查看當選人。":"縣市長並非全臺單一席次；請選擇縣市查看該縣市當選人。"
     };
   }
 
@@ -1840,7 +1840,7 @@ function getWinnerForCurrentView(name){
     party:winner.party||"—",
     share:total ? Number(winner.votes||0)/total*100 : Number(winner.share||0),
     votes:Number(winner.votes||0),
-    note:"顯示該縣市全區合計得票最高的候選人。"
+    note:activeKey==="metroMayor"?"顯示該直轄市全區合計得票最高的候選人。":"顯示該縣市全區合計得票最高的候選人。"
   };
 }
 
