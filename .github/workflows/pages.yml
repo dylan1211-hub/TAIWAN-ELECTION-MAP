@@ -56,6 +56,16 @@ jobs:
           curl -L "https://cdn.jsdelivr.net/npm/taiwan-atlas@2021.9.20/towns-10t.json" -o /tmp/towns-10t.json
           curl -L "https://taiwanvotes.tw/data/csv/%E7%B8%A3%E5%B8%82%E9%95%B7_2022_%E5%98%89%E7%BE%A9%E5%B8%82.csv?v=20260803111705" -o /tmp/chiayi_mayor_2022.csv
           python3 scripts/build_election_data.py --town-map /tmp/towns-10t.json
+          python3 -m py_compile scripts/build_election_data.py
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path("index.html").read_text(encoding="utf-8")
+          scripts=re.findall(r"<script>(.*?)</script>", html, flags=re.S)
+          Path("/tmp/index-inline.js").write_text("\\n".join(scripts), encoding="utf-8")
+          print("Inline JS blocks:", len(scripts))
+          PY
+          node --check /tmp/index-inline.js
           python3 - <<'PY'
           import json
           data=json.load(open("data/elections.json",encoding="utf-8"))
