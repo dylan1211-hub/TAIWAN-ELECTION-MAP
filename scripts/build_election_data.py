@@ -719,6 +719,77 @@ def build_historical_data(town_map):
             else:
                 metro_mayors[year] = result
     return presidents, mayors, metro_mayors
+def validate_dataset(name, ds):
+    if not isinstance(ds, dict):
+        raise ValueError(f"{name}: dataset is not an object")
+    national = ds.get("national") or {}
+    candidates = national.get("candidates") or []
+    if not candidates:
+        raise ValueError(f"{name}: national candidates are missing")
+    for idx, row in enumerate(candidates):
+        votes = float(row.get("votes", 0) or 0)
+        share = float(row.get("share", 0) or 0)
+        if votes < 0:
+            raise ValueError(f"{name}: negative national votes at candidate {idx}")
+        if not 0 <= share <= 100:
+            raise ValueError(f"{name}: invalid national share {share}")
+    national_total = float(national.get("totalVotes", 0) or 0)
+    national_sum = sum(float(x.get("votes", 0) or 0) for x in candidates)
+    if national_total and abs(national_sum - national_total) > 0.5:
+        raise ValueError(f"{name}: national vote total mismatch ({national_sum} != {national_total})")
+
+    towns = ds.get("towns") or {}
+    if not towns:
+        raise ValueError(f"{name}: town-level data is empty")
+    for key, row in towns.items():
+        total = float(row.get("totalVotes", 0) or 0)
+        candidates = row.get("candidates") or []
+        if total <= 0:
+            raise ValueError(f"{name}/{key}: totalVotes must be positive")
+        if not candidates:
+            raise ValueError(f"{name}/{key}: candidates are missing")
+        vote_sum = 0.0
+        share_sum = 0.0
+        seen = set()
+        for candidate in candidates:
+            candidate_name = str(candidate.get("name", "")).strip()
+            votes = float(candidate.get("votes", 0) or 0)
+            share = float(candidate.get("share", 0) or 0)
+            if not candidate_name:
+                raise ValueError(f"{name}/{key}: candidate name is empty")
+            if candidate_name in seen:
+                raise ValueError(f"{name}/{key}: duplicate candidate {candidate_name}")
+            seen.add(candidate_name)
+            if votes < 0:
+                raise ValueError(f"{name}/{key}: negative votes for {candidate_name}")
+            if not 0 <= share <= 100:
+                raise ValueError(f"{name}/{key}: invalid share {share}")
+            vote_sum += votes
+            share_sum += share
+        if abs(vote_sum - total) > 0.5:
+            raise ValueError(f"{name}/{key}: vote total mismatch ({vote_sum} != {total})")
+        if not 99.0 <= share_sum <= 101.0:
+            raise ValueError(f"{name}/{key}: candidate shares sum to {share_sum:.2f}%")
+
+def validate_payload(payload):
+    for kind, source_key in (
+        ("president", "presidents"),
+        ("mayor", "mayors"),
+        ("metroMayor", "metroMayors"),
+    ):
+        datasets = payload.get(source_key) or {}
+        years = payload.get("availableYears", {}).get(kind) or []
+        if not years:
+            raise ValueError(f"{kind}: no available years")
+        for year in years:
+            ds = datasets.get(str(year)) or datasets.get(year)
+            if ds is None:
+                raise ValueError(f"{kind}: missing dataset for {year}")
+            validate_dataset(f"{kind}/{year}", ds)
+    for name in ("president", "president2020", "mayor", "mayor2018"):
+        ds = payload.get(name)
+        if ds:
+            validate_dataset(name, ds)
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -746,7 +817,8 @@ partylist_2024["national"] = {"totalVotes": sum(x["votes"] for x in OFFICIAL_PAR
 payload = {
     "meta": {
         "source": "中央選舉委員會公開選舉資料",
-        "aggregation": "總統與不分區資料彙整至鄉鎮市區；縣市長資料彙整至縣市及鄉鎮市區層級"
+        "aggregation": "總統與不分區資料彙整至鄉鎮市區；縣市長與直轄市長資料依選舉年度整理至縣市及鄉鎮市區層級",
+        "sourceUrl": "https://db.cec.gov.tw/"
     },
     "president": {
         "year": 2024,
@@ -783,5 +855,6 @@ payload = {
     }
 }
 
+validate_payload(payload)
 OUT.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 print(f"Generated {OUT}: president={len(payload['president']['towns'])}, mayor_counties={len(payload['mayor']['counties'])}, mayor_towns={len(payload['mayor']['towns'])}, chiayi_districts={sum(1 for x in payload['mayor']['towns'].values() if x.get('county')=='嘉義市')}, mayor2018_counties={len(payload['mayor2018']['counties'])}")
