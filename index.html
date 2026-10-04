@@ -357,7 +357,7 @@ body{
   box-shadow:0 0 8px rgba(32,215,255,.8);
   opacity:.75;
 }
-.mapbar,.right-sticky-summary,.history-card,.filter-panel{position:relative}
+.mapbar,.history-card,.filter-panel{position:relative}
 .mapbar::before{left:10px;top:-1px}
 .right-sticky-summary::before{left:12px;top:-1px}
 .history-card::before{left:10px;top:-1px}
@@ -367,6 +367,151 @@ body{
 @media (max-width:900px){
   .map{min-height:55vh;background-size:auto,32px 32px,32px 32px}
   .map::before,.map::after{opacity:.55}
+}
+
+
+/* FUTURE-GIS-CUSTOM-DROPDOWN-V1 */
+.select-wrap{position:relative}
+.select-wrap>.select{
+  position:absolute;
+  width:1px;height:1px;
+  opacity:0;
+  pointer-events:none;
+  inset:auto;
+}
+.custom-select{
+  position:relative;
+  width:100%;
+  z-index:30;
+}
+.custom-select-trigger{
+  width:100%;
+  height:38px;
+  padding:0 36px 0 12px;
+  display:flex;
+  align-items:center;
+  text-align:left;
+  color:#e8f8ff;
+  background:linear-gradient(180deg,#0a2234,#071725);
+  border:1px solid #1a5578;
+  border-radius:9px;
+  font:inherit;
+  font-size:12px;
+  cursor:pointer;
+  position:relative;
+  box-shadow:inset 0 0 18px rgba(32,215,255,.035),0 0 0 rgba(32,215,255,0);
+  transition:border-color .16s,box-shadow .16s,background .16s;
+}
+.custom-select-trigger::before{
+  content:"";
+  width:18px;
+  height:1px;
+  position:absolute;
+  left:11px;
+  top:-1px;
+  background:#20d7ff;
+  box-shadow:0 0 8px rgba(32,215,255,.75);
+  opacity:.65;
+}
+.custom-select-trigger::after{
+  content:"";
+  position:absolute;
+  right:13px;
+  top:50%;
+  width:7px;
+  height:7px;
+  border-right:1.5px solid #72c9e9;
+  border-bottom:1.5px solid #72c9e9;
+  transform:translateY(-65%) rotate(45deg);
+  transition:transform .16s;
+}
+.custom-select.open .custom-select-trigger,
+.custom-select-trigger:hover{
+  background:linear-gradient(180deg,#0b2940,#081b2b);
+  border-color:#27c9f5;
+  box-shadow:inset 0 0 18px rgba(32,215,255,.055),0 0 14px rgba(32,215,255,.09);
+}
+.custom-select.open .custom-select-trigger::after{
+  transform:translateY(-25%) rotate(225deg);
+}
+.custom-select-menu{
+  position:absolute;
+  left:0;
+  right:0;
+  top:calc(100% + 6px);
+  max-height:270px;
+  overflow-y:auto;
+  padding:5px;
+  display:none;
+  background:linear-gradient(145deg,rgba(5,25,41,.985),rgba(3,13,24,.985));
+  border:1px solid #1874a0;
+  border-radius:10px;
+  box-shadow:0 16px 35px rgba(0,0,0,.55),0 0 22px rgba(32,215,255,.1),inset 0 0 20px rgba(32,215,255,.025);
+  backdrop-filter:blur(12px);
+}
+.custom-select.open .custom-select-menu{display:block}
+.custom-select-option{
+  min-height:34px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:7px 9px;
+  border-radius:7px;
+  color:#9bb5c7;
+  font-size:11px;
+  cursor:pointer;
+  transition:background .12s,color .12s,box-shadow .12s;
+}
+.custom-select-option::before{
+  content:"";
+  width:5px;height:5px;
+  flex:0 0 5px;
+  border:1px solid #3d647c;
+  border-radius:50%;
+  box-shadow:0 0 0 transparent;
+}
+.custom-select-option:hover{
+  color:#e8fbff;
+  background:linear-gradient(90deg,rgba(22,157,207,.2),rgba(32,215,255,.05));
+  box-shadow:inset 2px 0 0 #20d7ff,0 0 10px rgba(32,215,255,.06);
+}
+.custom-select-option:hover::before{
+  border-color:#20d7ff;
+  background:#20d7ff;
+  box-shadow:0 0 8px rgba(32,215,255,.7);
+}
+.custom-select-option.selected{
+  color:#eafcff;
+  background:linear-gradient(90deg,rgba(22,157,207,.24),rgba(32,215,255,.07));
+  box-shadow:inset 2px 0 0 #20d7ff;
+  font-weight:650;
+}
+.custom-select-option.selected::before{
+  content:"✓";
+  width:11px;height:11px;
+  flex-basis:11px;
+  border:0;
+  border-radius:0;
+  color:#20d7ff;
+  font-size:11px;
+  line-height:11px;
+  text-shadow:0 0 8px rgba(32,215,255,.8);
+}
+.custom-select-menu::-webkit-scrollbar{width:6px}
+.custom-select-menu::-webkit-scrollbar-track{background:#06111c;border-radius:99px}
+.custom-select-menu::-webkit-scrollbar-thumb{background:#17618a;border-radius:99px}
+.custom-select-menu::-webkit-scrollbar-thumb:hover{background:#22a8d6}
+.custom-select-menu{scrollbar-color:#17618a #06111c;scrollbar-width:thin}
+.custom-select.disabled .custom-select-trigger{
+  opacity:.48;
+  cursor:not-allowed;
+}
+.custom-select.disabled .custom-select-trigger:hover{
+  border-color:#1a5578;
+  box-shadow:inset 0 0 18px rgba(32,215,255,.035);
+}
+@media (max-width:900px){
+  .custom-select-menu{max-height:230px}
 }
 
 </style>
@@ -581,6 +726,60 @@ function setup(topo){
   applyElectionColors();
   updatePanel("全臺",activeDataset?.national);
   $("status").textContent="行政區地圖｜"+(activeDataset?.year||2024)+" "+(activeDataset?.election||"");
+}
+
+
+function initCustomSelects(){
+  ["electionType","year","county","town"].forEach(id=>{
+    const select=$(id);
+    if(!select)return;
+    const wrap=select.parentElement;
+    if(wrap.querySelector(".custom-select"))return;
+    const custom=document.createElement("div");
+    custom.className="custom-select";
+    custom.dataset.for= id;
+    custom.innerHTML='<button type="button" class="custom-select-trigger"></button><div class="custom-select-menu"></div>';
+    wrap.appendChild(custom);
+    custom.querySelector(".custom-select-trigger").onclick=()=>{
+      if(custom.classList.contains("disabled"))return;
+      document.querySelectorAll(".custom-select.open").forEach(x=>{
+        if(x!==custom)x.classList.remove("open");
+      });
+      custom.classList.toggle("open");
+      refreshCustomSelect(id);
+    };
+  });
+  document.addEventListener("click",e=>{
+    if(!e.target.closest(".custom-select")){
+      document.querySelectorAll(".custom-select.open").forEach(x=>x.classList.remove("open"));
+    }
+  });
+  ["electionType","year","county","town"].forEach(refreshCustomSelect);
+}
+function refreshCustomSelect(id){
+  const select=$(id);
+  const custom=document.querySelector('.custom-select[data-for="'+id+'"]');
+  if(!select||!custom)return;
+  const trigger=custom.querySelector(".custom-select-trigger");
+  const menu=custom.querySelector(".custom-select-menu");
+  const options=[...select.options];
+  const selected=select.options[select.selectedIndex];
+  trigger.textContent=selected?.textContent||"—";
+  menu.innerHTML=options.map((o,i)=>
+    '<div class="custom-select-option'+(o.selected?' selected':'')+'" data-value="'+String(o.value).replace(/"/g,'&quot;')+'">'+
+      o.textContent+
+    '</div>'
+  ).join("");
+  menu.querySelectorAll(".custom-select-option").forEach(item=>{
+    item.onclick=()=>{
+      const value=item.dataset.value;
+      select.value=value;
+      select.dispatchEvent(new Event("change",{bubbles:true}));
+      refreshCustomSelect(id);
+      custom.classList.remove("open");
+    };
+  });
+  custom.classList.toggle("disabled",!!select.disabled);
 }
 
 function populateMenus(){
