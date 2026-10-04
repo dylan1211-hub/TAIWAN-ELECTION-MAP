@@ -795,6 +795,70 @@ body{
   .brand-home .brand-mark{width:32px;height:32px;flex-basis:32px}
 }
 
+
+/* BRAND-LAYOUT-V3: fixed header + independent sidebar scroll */
+.side{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.side-scroll{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:visible;
+  margin:0 -18px;
+  padding:0 18px 17px;
+  scrollbar-width:thin;
+  scrollbar-color:#33445a #0a111a;
+}
+.side-scroll::-webkit-scrollbar{width:7px}
+.side-scroll::-webkit-scrollbar-track{background:#0a111a}
+.side-scroll::-webkit-scrollbar-thumb{background:#33445a;border-radius:99px;border:1px solid #0a111a}
+.brand-home{
+  position:relative;
+  top:auto;
+  z-index:20;
+  flex:0 0 74px;
+  height:74px;
+  min-height:74px;
+  margin:0 -18px 10px;
+  padding:7px 18px 9px;
+  background:linear-gradient(180deg,rgba(3,13,23,.995),rgba(3,13,23,.98));
+  border-bottom:1px solid #174d70;
+  box-shadow:0 8px 18px rgba(0,0,0,.24);
+}
+@media (max-width:900px){
+  .side{
+    overflow:hidden;
+  }
+  .brand-home{
+    position:relative;
+    flex-basis:68px;
+    height:68px;
+    min-height:68px;
+    margin:0 -14px 10px;
+    padding:5px 14px 8px;
+  }
+  .side-scroll{
+    margin:0 -14px;
+    padding:0 14px 12px;
+  }
+}
+@media (max-width:600px){
+  .brand-home{
+    flex-basis:64px;
+    height:64px;
+    min-height:64px;
+    margin:0 -12px 8px;
+    padding:5px 12px 7px;
+  }
+  .side-scroll{
+    margin:0 -12px;
+    padding:0 12px 10px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -808,6 +872,7 @@ body{
     </div>
   </button>
 
+  <div class="side-scroll">
   <details class="filter-panel" open>
     <summary>
       <span><strong>選舉與區域</strong><small>依序選擇即可更新地圖</small></span>
@@ -859,6 +924,7 @@ body{
     <div class="party-key"><i class="party-dot dpp"></i><span>民主進步黨</span></div>
     <div class="party-key"><i class="party-dot kmt"></i><span>中國國民黨</span></div>
     <div class="party-key"><i class="party-dot tpp"></i><span>台灣民眾黨</span></div>
+  </div>
   </div>
 </aside>
 
