@@ -119,7 +119,7 @@ const $=id=>document.getElementById(id),svg=d3.select("#svg");
 let g,zoom,towns=[],projection,path,selectedCode=null,electionData=null,voteShareChart=null,partyChartInstance=null,trendChartInstance=null,historyTurnoutChartInstance=null,historyShareChartInstance=null,mayorAnalysisChartInstance=null;
 
 const MAP_URL="https://cdn.jsdelivr.net/npm/taiwan-atlas@2021.9.20/towns-10t.json";
-const DATA_URL="data/elections.json?v=20261003-5";
+const DATA_URL="data/elections.json?v=20261004-1";
 let activeKey="president",activeDataset=null,partyTownLookup={},partyNameLookup={},history2020Lookup={},mayor2018Lookup={},mayorNameLookup={},selectedFeatures=[];
 
 const PARTY_COLOR={
@@ -537,11 +537,13 @@ function renderHistory(){
   mayorChart.style.display="none";
   panel.querySelector(".history-sub").textContent="1996–2024 全國總統副總統選舉";
   const history=electionData?.presidents||{};
+  const stats=electionData?.presidentHistory||{};
   const years=Object.keys(history).map(Number).sort((a,b)=>a-b);
   cards.innerHTML=years.map(y=>{
     const s=history[y];
+    const meta=stats[y]||stats[String(y)]||{};
     const lead=s?.candidates?.[0];
-    return '<div class="history-year-card"><div class="history-year">'+y+'</div><div class="history-winner">'+(lead?.name||"—")+'</div><div class="history-meta">'+(lead?.party||"—")+'　'+(lead?.share?.toFixed(2)||"—")+'%</div><div class="history-stat">投票率 '+(s?.turnout?.toFixed(2)||"—")+'%</div><div class="history-stat">有效票 '+fmt(s?.validVotes||0)+'</div></div>';
+    return '<div class="history-year-card"><div class="history-year">'+y+'</div><div class="history-winner">'+(lead?.name||"—")+'</div><div class="history-meta">'+(lead?.party||"—")+'　'+(lead?.share?.toFixed(2)||"—")+'%</div><div class="history-stat">投票率 '+(meta?.turnout?.toFixed(2)||"—")+'%</div><div class="history-stat">有效票 '+fmt(meta?.validVotes||0)+'</div></div>';
   }).join("");
   if(!historyTurnoutChartInstance)historyTurnoutChartInstance=echarts.init($("historyTurnoutChart"),"dark");
   historyTurnoutChartInstance.setOption({
@@ -549,7 +551,7 @@ function renderHistory(){
     xAxis:{type:"category",data:years.map(String),axisLabel:{color:"#8190a4",fontSize:10}},
     yAxis:{type:"value",min:55,max:80,axisLabel:{color:"#8190a4",fontSize:9,formatter:v=>v+"%"},splitLine:{lineStyle:{color:"#263242"}}},
     tooltip:{trigger:"axis",backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},valueFormatter:v=>Number(v).toFixed(2)+"%"},
-    series:[{type:"line",smooth:true,symbol:"circle",symbolSize:7,data:years.map(y=>history[y]?.turnout||null),lineStyle:{width:2,color:"#67d5ff"},itemStyle:{color:"#67d5ff"},areaStyle:{opacity:.08}}]
+    series:[{type:"line",smooth:true,symbol:"circle",symbolSize:7,data:years.map(y=>(stats[y]||stats[String(y)])?.turnout||null),lineStyle:{width:2,color:"#67d5ff"},itemStyle:{color:"#67d5ff"},areaStyle:{opacity:.08}}]
   },true);
   if(!historyShareChartInstance)historyShareChartInstance=echarts.init($("historyShareChart"),"dark");
   const parties=["民主進步黨","中國國民黨","台灣民眾黨","親民黨"];
@@ -559,7 +561,7 @@ function renderHistory(){
     yAxis:{type:"value",min:0,max:65,axisLabel:{color:"#8190a4",fontSize:9,formatter:v=>v+"%"},splitLine:{lineStyle:{color:"#263242"}}},
     tooltip:{trigger:"axis",backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},valueFormatter:v=>Number(v).toFixed(2)+"%"},
     legend:{top:0,right:0,left:"auto",textStyle:{color:"#9aa8ba",fontSize:9},itemWidth:10,itemHeight:7},
-    series:parties.map(p=>({name:p,type:"line",smooth:true,symbol:"circle",symbolSize:5,data:years.map(y=>{const x=history[y]?.candidates?.find(c=>c.party===p);return x?x.share:null}),connectNulls:false,lineStyle:{width:2,color:partyColor(p)},itemStyle:{color:partyColor(p)}}))
+    series:parties.map(p=>({name:p,type:"line",smooth:true,symbol:"circle",symbolSize:5,data:years.map(y=>{const x=(stats[y]||stats[String(y)])?.candidates?.find(c=>c.party===p) || history[y]?.candidates?.find(c=>c.party===p);return x?x.share:null}),connectNulls:false,lineStyle:{width:2,color:partyColor(p)},itemStyle:{color:partyColor(p)}}))
   },true);
 }
 function partyShares(bucket){
@@ -678,7 +680,7 @@ function setElectionType(){
   activeKey=type==="mayor"?"mayor":"president";
   const years=electionData?.availableYears?.[activeKey]||[];
   const current=activeKey==="mayor"?2022:2024;
-  $("year").innerHTML=years.slice().sort((a,b)=>b-a).map(y=>'<option value="'+y+'">'+y+'</option>').join("");
+  $("year").innerHTML=years.slice().sort((a,b)=>b-a).map(y=>'<option value="'+y+'">'+(activeKey==="mayor" && Number(y)===2009 ? "2009-2010" : y)+'</option>').join("");
   $("year").value=years.includes(current)?String(current):String(years[0]||current);
   activeDataset=prepareDataset(datasetFor(activeKey,$("year").value));
   $("town").disabled=false;$("town").title="";
