@@ -87,6 +87,288 @@ body::-webkit-scrollbar-thumb:hover,.side::-webkit-scrollbar-thumb:hover,.right:
 .side-legend-title{font-size:9px}.party-key{font-size:10px}
 .right .title{font-size:10px}.place{font-size:24px}.badge{font-size:9px}.winner-label{font-size:9px}.winner-party{font-size:11px}.winner-share{font-size:10px}.data-level{font-size:9px}.section-title{font-size:10px}.kpi-label{font-size:9px}.kpi-value{font-size:15px}
 .legislature-box{margin-top:2px;padding:9px 10px;border:1px solid #26384c;border-radius:9px;background:#101a27}.legislature-summary{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}.legislature-total{font-size:10px;color:#8fa0b4}.legislature-majority{font-size:9px;color:#9aa8ba}.legislature-bar{display:flex;height:12px;border-radius:99px;overflow:hidden;background:#182230;margin-bottom:8px}.legislature-segment{height:100%;min-width:2px;transition:width .25s}.legislature-list{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px}.legislature-item{display:flex;align-items:center;justify-content:space-between;gap:7px;font-size:10px;color:#aab6c6}.legislature-party{display:flex;align-items:center;gap:5px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.legislature-dot{width:7px;height:7px;border-radius:50%;flex:0 0 7px}.legislature-seat{font-variant-numeric:tabular-nums;font-weight:700;color:#e7edf5}.legislature-majority-party{color:#f4f8fc;font-weight:700}.legislature-note{font-size:8px;color:#65768b;margin-top:8px;line-height:1.45}
+
+/* FUTURE-GIS-NEON-V1 */
+:root{
+  --bg:#020812;
+  --panel:#06111d;
+  --panel2:#081827;
+  --line:#153b59;
+  --line2:#1d5b82;
+  --text:#eaf8ff;
+  --muted:#7895aa;
+  --cyan:#20d7ff;
+  --cyan2:#4aa8ff;
+  --green:#27d85f;
+  --blue:#2f73ff;
+  --tpp:#16d8ed;
+}
+body{
+  background:
+    radial-gradient(circle at 50% 42%,rgba(10,83,130,.18),transparent 34%),
+    radial-gradient(circle at 82% 15%,rgba(0,198,255,.08),transparent 24%),
+    #020812;
+}
+.app{
+  background:#020812;
+}
+.side,.right,.history-panel{
+  background:
+    linear-gradient(180deg,rgba(5,18,31,.98),rgba(3,12,22,.98)),
+    #06111d;
+}
+.side{
+  border-right:1px solid #16415f;
+  box-shadow:8px 0 35px rgba(0,0,0,.3);
+}
+.right{
+  border-left:1px solid #16415f;
+  box-shadow:-8px 0 35px rgba(0,0,0,.3);
+}
+.brand{
+  background:
+    linear-gradient(180deg,rgba(5,20,34,.99),rgba(5,17,29,.94));
+  border-bottom:1px solid #174d70;
+  box-shadow:0 8px 25px rgba(0,0,0,.22);
+}
+.brand-mark{
+  border-color:#168dc2;
+  color:#b9f3ff;
+  background:linear-gradient(135deg,#092438,#06121f);
+  box-shadow:0 0 14px rgba(32,215,255,.22),inset 0 0 12px rgba(32,215,255,.08);
+}
+.brand h1{
+  color:#f1fbff;
+  text-shadow:0 0 12px rgba(32,215,255,.18);
+}
+.brand .sub{color:#5f8ba5}
+.side-section-label{
+  color:#4e7893;
+  letter-spacing:.18em;
+}
+.filter-panel{
+  background:linear-gradient(145deg,#081b2b,#061421);
+  border:1px solid #15547a;
+  box-shadow:0 0 0 1px rgba(32,215,255,.035),0 8px 24px rgba(0,0,0,.2);
+}
+.filter-panel summary{
+  background:linear-gradient(90deg,rgba(20,109,151,.08),transparent);
+}
+.filter-panel summary strong{color:#dff8ff}
+.select{
+  background:linear-gradient(180deg,#0a2234,#071725);
+  border-color:#1a5578;
+  box-shadow:inset 0 0 18px rgba(32,215,255,.035);
+}
+.select:hover{
+  background:#0b273b;
+  border-color:#28a8db;
+  box-shadow:0 0 12px rgba(32,215,255,.1);
+}
+.select:focus{
+  border-color:#20d7ff;
+  box-shadow:0 0 0 3px rgba(32,215,255,.11),0 0 18px rgba(32,215,255,.1);
+}
+.clear-filter{
+  background:linear-gradient(180deg,#071a2a,#06121e);
+  border-color:#1b638b;
+}
+.clear-filter:hover{
+  background:#0a263a;
+  border-color:#25bff1;
+  color:#e8fbff;
+  box-shadow:0 0 14px rgba(32,215,255,.12);
+}
+.selection-guide{
+  border-color:#174a67;
+  background:linear-gradient(135deg,#061b2b,#07131f);
+  box-shadow:inset 0 0 18px rgba(32,215,255,.025);
+}
+.guide-dot{
+  background:#20d7ff;
+  box-shadow:0 0 0 4px rgba(32,215,255,.09),0 0 12px rgba(32,215,255,.7);
+}
+.side-legend{
+  border-top-color:#14354d;
+}
+.party-dot.dpp{background:#27d85f;box-shadow:0 0 8px rgba(39,216,95,.45)}
+.party-dot.kmt{background:#2f73ff;box-shadow:0 0 8px rgba(47,115,255,.45)}
+.party-dot.tpp{background:#16d8ed;box-shadow:0 0 8px rgba(22,216,237,.45)}
+
+.map{
+  background:
+    radial-gradient(circle at 53% 48%,rgba(20,105,155,.18),transparent 30%),
+    linear-gradient(rgba(32,215,255,.055) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(32,215,255,.055) 1px,transparent 1px),
+    #020a13;
+  background-size:auto,42px 42px,42px 42px;
+  overflow:hidden;
+}
+.map::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 50% 46%,transparent 0 17%,rgba(32,215,255,.06) 17.1%,transparent 17.35%),
+    radial-gradient(circle at 50% 46%,transparent 0 29%,rgba(32,215,255,.045) 29.1%,transparent 29.3%),
+    radial-gradient(circle at 50% 46%,transparent 0 42%,rgba(32,215,255,.03) 42.1%,transparent 42.3%);
+}
+.map::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,transparent 0 49.85%,rgba(32,215,255,.07) 49.9%,transparent 50.1%),
+    linear-gradient(0deg,transparent 0 49.85%,rgba(32,215,255,.07) 49.9%,transparent 50.1%);
+}
+.map svg{
+  position:relative;
+  z-index:1;
+}
+.mapbar{
+  background:linear-gradient(135deg,rgba(4,20,34,.94),rgba(4,13,23,.88));
+  border-color:#17618a;
+  color:#a9cce0;
+  box-shadow:0 0 22px rgba(0,0,0,.35),0 0 14px rgba(32,215,255,.06);
+}
+.town{
+  stroke:#284c66;
+  transition:fill .15s,stroke .15s,filter .15s;
+}
+.town:hover{
+  stroke:#9beaff;
+  filter:drop-shadow(0 0 4px rgba(32,215,255,.4));
+}
+.town.selected{
+  stroke:#bdf6ff !important;
+  stroke-width:2.1 !important;
+  filter:drop-shadow(0 0 4px rgba(32,215,255,.95)) drop-shadow(0 0 10px rgba(32,215,255,.35));
+}
+.town.county-selected{
+  stroke:#bdf6ff !important;
+  filter:drop-shadow(0 0 4px rgba(32,215,255,.75));
+}
+.town-border{stroke:#39617a}
+.county-border{stroke:#5c91b0}
+.nation-border{
+  stroke:#b9edff;
+  filter:drop-shadow(0 0 3px rgba(32,215,255,.5));
+}
+.map-legend{
+  background:linear-gradient(145deg,rgba(5,23,38,.96),rgba(3,13,23,.94));
+  border-color:#17618a;
+  box-shadow:0 12px 30px rgba(0,0,0,.45),0 0 20px rgba(32,215,255,.08);
+}
+.party-ramp.dpp{background:linear-gradient(90deg,#3fa85f,#06451d);box-shadow:0 0 7px rgba(39,216,95,.18)}
+.party-ramp.kmt{background:linear-gradient(90deg,#467fd1,#0d3478);box-shadow:0 0 7px rgba(47,115,255,.18)}
+.party-ramp.tpp{background:linear-gradient(90deg,#32b6d1,#034f68);box-shadow:0 0 7px rgba(22,216,237,.18)}
+.zoom-controls button{
+  background:linear-gradient(180deg,#092338,#06131f);
+  border-color:#17618a;
+  color:#d9f8ff;
+}
+.zoom-controls button:hover{
+  background:#0c2d45;
+  border-color:#2cd8ff;
+  box-shadow:0 0 13px rgba(32,215,255,.2);
+}
+
+.right-sticky-summary{
+  background:linear-gradient(180deg,rgba(5,18,31,.99) 78%,rgba(5,18,31,.94));
+  border-bottom-color:#174d70;
+}
+.right .title{
+  color:#5e8da8;
+}
+.place{
+  color:#f0fbff;
+  text-shadow:0 0 16px rgba(32,215,255,.12);
+}
+.badge{
+  background:linear-gradient(90deg,#092237,#071522);
+  border-color:#1b638b;
+  color:#8dc5df;
+  box-shadow:inset 0 0 12px rgba(32,215,255,.04);
+}
+.winner-card{
+  background:linear-gradient(145deg,#0a2032,#071521);
+  border-color:#1b5c7e;
+  box-shadow:0 10px 28px rgba(0,0,0,.35),inset 0 0 22px rgba(32,215,255,.025);
+}
+.winner-card.party-dpp{border-color:#27d85f88;box-shadow:inset 3px 0 0 #27d85f,0 0 18px rgba(39,216,95,.08)}
+.winner-card.party-kmt{border-color:#2f73ff88;box-shadow:inset 3px 0 0 #2f73ff,0 0 18px rgba(47,115,255,.08)}
+.winner-card.party-tpp{border-color:#16d8ed88;box-shadow:inset 3px 0 0 #16d8ed,0 0 18px rgba(22,216,237,.08)}
+.metric{
+  border-bottom-color:#173247;
+}
+.kpi-card{
+  background:linear-gradient(145deg,#0a1c2c,#071522);
+  border-color:#19445f;
+}
+.section-title{
+  color:#6f9ab2;
+  letter-spacing:.08em;
+}
+.legislature-box{
+  background:linear-gradient(145deg,#091c2b,#06131f);
+  border-color:#19445f;
+}
+.source{
+  border-top-color:#14354d;
+}
+.history-panel{
+  border-top-color:#16415f;
+  box-shadow:0 -10px 35px rgba(0,0,0,.2);
+}
+.history-card{
+  background:linear-gradient(145deg,#081b2b,#06131f);
+  border-color:#194c68;
+  box-shadow:inset 0 0 24px rgba(32,215,255,.018),0 8px 20px rgba(0,0,0,.22);
+}
+.history-title{
+  color:#e7f9ff;
+  text-shadow:0 0 10px rgba(32,215,255,.08);
+}
+.history-sub{color:#668ba1}
+.history-year-card{
+  background:#071724;
+  border-color:#173d56;
+}
+.mayor-analysis-scroll::-webkit-scrollbar-thumb{
+  background:#17618a;
+}
+.tooltip{
+  background:rgba(3,14,24,.96);
+  border-color:#24769f;
+  box-shadow:0 12px 35px #0009,0 0 18px rgba(32,215,255,.08);
+}
+.tooltip-party{color:#79a4bb}
+
+/* Neon data-console accents */
+.mapbar::before,.right-sticky-summary::before,.history-card::before,.filter-panel::before{
+  content:"";
+  position:absolute;
+  width:34px;height:1px;
+  background:#20d7ff;
+  box-shadow:0 0 8px rgba(32,215,255,.8);
+  opacity:.75;
+}
+.mapbar,.right-sticky-summary,.history-card,.filter-panel{position:relative}
+.mapbar::before{left:10px;top:-1px}
+.right-sticky-summary::before{left:12px;top:-1px}
+.history-card::before{left:10px;top:-1px}
+.filter-panel::before{left:10px;top:-1px}
+
+/* Keep mobile readable */
+@media (max-width:900px){
+  .map{min-height:55vh;background-size:auto,32px 32px,32px 32px}
+  .map::before,.map::after{opacity:.55}
+}
+
 </style>
 </head>
 <body>
