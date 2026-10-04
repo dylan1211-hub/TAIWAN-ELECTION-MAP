@@ -3,7 +3,6 @@ on:
   push:
     paths-ignore:
       - "index.html"
-      - ".github/workflows/ui-polish.yml"
 permissions:
   contents: write
 jobs:
