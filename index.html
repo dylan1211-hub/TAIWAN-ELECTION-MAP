@@ -15,7 +15,20 @@
   };
   const updateFilterCurrent=()=>{const el=document.getElementById("filterCurrent");if(!el)return;const type=document.getElementById("electionType")?.selectedOptions?.[0]?.textContent||"";const year=document.getElementById("year")?.selectedOptions?.[0]?.textContent||"";const county=document.getElementById("county")?.selectedOptions?.[0]?.textContent||"全臺";const town=document.getElementById("town")?.selectedOptions?.[0]?.textContent||"";el.textContent=year+" · "+type+(county&&county!=="全臺"?" · "+county:"")+(town&&town!=="選擇鄉鎮市區…"?" · "+town:"")};
   const oldUpdate=window.updatePanel;if(typeof oldUpdate==="function"){window.updatePanel=function(name,data){oldUpdate(name,data);decorate();updateFilterCurrent()}};
-  const clear=document.getElementById("clearSelectionUi");clear?.addEventListener("click",()=>{const county=document.getElementById("county"),town=document.getElementById("town");if(county){county.value="";county.dispatchEvent(new Event("change"))}if(town)town.value="";updateFilterCurrent()});
+  const clear=document.getElementById("clearSelectionUi");
+  clear?.addEventListener("click",()=>{
+    clearSelection();
+    selectedFeatures=towns;
+    selectedCode=null;
+    const county=document.getElementById("county");
+    const town=document.getElementById("town");
+    if(county)county.value="";
+    updateTownMenu("");
+    if(town)town.value="";
+    zoomTo(towns);
+    updatePanel("全臺",activeDataset?.national);
+    updateFilterCurrent();
+  });
   ["electionType","year","county","town"].forEach(id=>document.getElementById(id)?.addEventListener("change",updateFilterCurrent));
   updateFilterCurrent();decorate();
 })();
@@ -84,6 +97,11 @@ body::-webkit-scrollbar-thumb:hover,.side::-webkit-scrollbar-thumb:hover,.right:
 .party-text.dpp{color:var(--green)!important}.party-text.kmt{color:var(--blue)!important}.party-text.tpp{color:var(--tpp)!important}.party-text.other{color:#93a0b1!important}.winner-card.party-dpp{border-color:#1b9e3f66;box-shadow:inset 3px 0 0 var(--green),0 8px 22px #0003}.winner-card.party-kmt{border-color:#2f6fd666;box-shadow:inset 3px 0 0 var(--blue),0 8px 22px #0003}.winner-card.party-tpp{border-color:#19a7ce66;box-shadow:inset 3px 0 0 var(--tpp),0 8px 22px #0003}
 @media (max-width:1200px){.app{grid-template-columns:220px minmax(0,1fr) 320px;grid-template-rows:minmax(0,1fr) 300px}.history-panel{grid-template-columns:1fr 1fr}.history-card#historyCardShare{display:none}}
 @media (max-width:900px){body{overflow:auto}.app{height:auto;min-height:100vh;display:grid;grid-template-columns:1fr;grid-template-rows:auto 55vh auto auto}.side{border-right:0;border-bottom:1px solid #202d3d;overflow:visible}.right{border-left:0;border-top:1px solid #202d3d;overflow:visible}.map{min-height:55vh}.history-panel{grid-row:auto;grid-template-columns:1fr!important;height:auto;overflow:visible}.history-card{min-height:260px}.mayor-seat-card{display:flex}}
+
+/* UI-POLISH-V2: party semantics */
+.winner-name.party-dpp,.winner-party.party-dpp,.party-text.dpp{color:#1b9e3f!important}
+.winner-name.party-kmt,.winner-party.party-kmt,.party-text.kmt{color:#2f6fd6!important}
+.winner-name.party-tpp,.winner-party.party-tpp,.party-text.tpp{color:#19a7ce!important}
 </style>
 </head>
 <body>
@@ -463,7 +481,7 @@ function showTownTooltip(e,d){
   $("tooltip").innerHTML='<div class="tooltip-title">'+d.properties.COUNTYNAME+'・'+d.properties.TOWNNAME+'</div>'+
     candidates.map(x=>{
       const share=(x.share!=null?x.share:(total?x.votes/total*100:0));
-      return '<div class="tooltip-row"><div><div>'+x.name+'</div><div class="tooltip-party">'+x.party+'　'+fmt(x.votes)+'票</div></div><div class="tooltip-share">'+share.toFixed(2)+'%</div></div>';
+      return '<div class="tooltip-row"><div><div>'+x.name+'</div><div class="tooltip-party" style="color:'+partyColor(x.party)+'">'+x.party+'　'+fmt(x.votes)+'票</div></div><div class="tooltip-share">'+share.toFixed(2)+'%</div></div>';
     }).join("");
   $("tooltip").style.display="block";
   moveTownTooltip(e);
@@ -677,30 +695,75 @@ function renderMayorHistory(){
       b.candidates[c.name].votes+=Number(c.votes||0);
     }
   });
+
   const rows=Object.entries(buckets).map(([county,s])=>{
     s.candidates=Object.entries(s.candidates).map(([name,v])=>({name,party:v.party,votes:v.votes}));
     const total=s.totalVotes||1;
-
     const shares=partyShares(s);
-    return {county, dpp:(shares["民主進步黨"]||0)/s.totalVotes*100, kmt:(shares["中國國民黨"]||0)/s.totalVotes*100, tpp:(shares["台灣民眾黨"]||0)/s.totalVotes*100, other:Math.max(0,100-(shares["民主進步黨"]||0)/s.totalVotes*100-(shares["中國國民黨"]||0)/s.totalVotes*100-(shares["台灣民眾黨"]||0)/s.totalVotes*100)};
+    return {
+      county,
+      dpp:(shares["民主進步黨"]||0)/total*100,
+      kmt:(shares["中國國民黨"]||0)/total*100,
+      tpp:(shares["台灣民眾黨"]||0)/total*100,
+      other:Math.max(0,100-
+        (shares["民主進步黨"]||0)/total*100-
+        (shares["中國國民黨"]||0)/total*100-
+        (shares["台灣民眾黨"]||0)/total*100)
+    };
   }).sort((a,b)=>a.county.localeCompare(b.county,"zh-Hant"));
+
+  const selectedCounty=selectedFeatures?.[0]?.properties?.COUNTYNAME ||
+    ($("place").textContent==="全臺" ? "" : $("place").textContent.split("・")[0]);
+
   $("historyCardOverview").querySelector(".history-title").textContent="縣市長選舉分析";
-  $("historyCardOverview").querySelector(".history-sub").textContent=(activeDataset?.year||"")+" 各縣市政黨得票率｜依當年資料比較";
+  $("historyCardOverview").querySelector(".history-sub").textContent=
+    (activeDataset?.year||"")+" 各縣市政黨得票率｜依當年資料比較"+
+    (selectedCounty ? "｜目前選取："+selectedCounty : "");
+
   $("historyCards").innerHTML="";
   if(!mayorAnalysisChartInstance)mayorAnalysisChartInstance=echarts.init($("mayorAnalysisChart"),"dark");
+
+  const barData=(key)=>rows.map(x=>({
+    value:x[key],
+    itemStyle:{
+      color:partyColor(key==="dpp"?"民主進步黨":key==="kmt"?"中國國民黨":key==="tpp"?"台灣民眾黨":"其他"),
+      opacity:selectedCounty ? (x.county===selectedCounty?1:.28) : 1,
+      borderColor:x.county===selectedCounty ? "#f4f8fc" : "transparent",
+      borderWidth:x.county===selectedCounty ? 1.5 : 0
+    }
+  }));
+
   mayorAnalysisChartInstance.setOption({
     animationDuration:450,
-    grid:{left:70,right:22,top:26,bottom:28},
+    grid:{left:70,right:22,top:30,bottom:28},
     xAxis:{type:"value",max:100,axisLabel:{color:"#8190a4",fontSize:9,formatter:v=>v+"%"},splitLine:{lineStyle:{color:"#263242"}}},
-    yAxis:{type:"category",inverse:true,data:rows.map(x=>x.county),axisLabel:{color:"#9aa8ba",fontSize:9}},
-    tooltip:{trigger:"axis",axisPointer:{type:"shadow"},backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},valueFormatter:v=>Number(v).toFixed(2)+"%"},
+    yAxis:{
+      type:"category",inverse:true,data:rows.map(x=>x.county),
+      axisLabel:{
+        fontSize:9,
+        formatter:value=>value===selectedCounty?"{selected|"+value+"}":value,
+        rich:{selected:{color:"#f4f8fc",fontWeight:700,backgroundColor:"#25364a",borderRadius:4,padding:[3,5]}}
+      }
+    },
+    tooltip:{
+      trigger:"axis",axisPointer:{type:"shadow"},backgroundColor:"#0b111a",borderColor:"#3a485b",
+      textStyle:{color:"#e7edf5",fontSize:11},
+      formatter:params=>{
+        const row=rows[params[0]?.dataIndex]; if(!row)return "";
+        const mark=row.county===selectedCounty?" ★ 目前選取":"";
+        return "<b>"+row.county+mark+"</b><br>"+
+          "民主進步黨　"+row.dpp.toFixed(2)+"%<br>"+
+          "中國國民黨　"+row.kmt.toFixed(2)+"%<br>"+
+          "台灣民眾黨　"+row.tpp.toFixed(2)+"%<br>"+
+          "其他　　　　"+row.other.toFixed(2)+"%";
+      }
+    },
     legend:{top:0,left:"center",textStyle:{color:"#9aa8ba",fontSize:9},itemWidth:10,itemHeight:7},
-
     series:[
-      {name:"民主進步黨",type:"bar",stack:"total",data:rows.map(x=>x.dpp),itemStyle:{color:partyColor("民主進步黨")}},
-      {name:"中國國民黨",type:"bar",stack:"total",data:rows.map(x=>x.kmt),itemStyle:{color:partyColor("中國國民黨")}},
-      {name:"台灣民眾黨",type:"bar",stack:"total",data:rows.map(x=>x.tpp),itemStyle:{color:partyColor("台灣民眾黨")}},
-      {name:"其他",type:"bar",stack:"total",data:rows.map(x=>x.other),itemStyle:{color:"#738196"}}
+      {name:"民主進步黨",type:"bar",stack:"total",data:barData("dpp")},
+      {name:"中國國民黨",type:"bar",stack:"total",data:barData("kmt")},
+      {name:"台灣民眾黨",type:"bar",stack:"total",data:barData("tpp")},
+      {name:"其他",type:"bar",stack:"total",data:barData("other")}
     ]
   },true);
 }
@@ -852,9 +915,10 @@ function renderWinner(name){
     el.innerHTML='<div class="winner-label">'+winner.label+'</div><div class="winner-name" style="font-size:16px">各縣市分別選出</div><div class="winner-note">'+winner.note+'</div>';
     return;
   }
+  const winnerColor=partyColor(winner.party);
   el.innerHTML='<div class="winner-label">'+winner.label+'</div>'+
-    '<div class="winner-name">'+winner.name+'</div>'+
-    '<div class="winner-party">'+winner.party+'</div>'+
+    '<div class="winner-name" style="color:'+winnerColor+'">'+winner.name+'</div>'+
+    '<div class="winner-party" style="color:'+winnerColor+'">'+winner.party+'</div>'+
     '<div class="winner-share">'+fmt(winner.votes)+' 票　'+winner.share.toFixed(2)+'%</div>';
 }
 
