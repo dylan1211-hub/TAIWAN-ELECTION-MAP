@@ -1356,7 +1356,11 @@ function refreshCustomSelect(id){
     item.onclick=()=>{
       const value=item.dataset.value;
       select.value=value;
-      select.dispatchEvent(new Event("change",{bubbles:true}));
+      if(id==="electionType"){
+        setElectionType();
+      }else{
+        select.dispatchEvent(new Event("change",{bubbles:true}));
+      }
       refreshCustomSelect(id);
       custom.classList.remove("open");
     };
@@ -1664,7 +1668,7 @@ function renderPie(data){
 function renderRegionKpis(data){
   const box=$("regionKpis");
   if(!box)return;
-  if(activeKey==="mayor" && $("place").textContent==="全臺"){
+  if((activeKey==="mayor" || activeKey==="metroMayor") && $("place").textContent==="全臺"){
     box.innerHTML='<div class="empty" style="grid-column:1/-1">'+(activeKey==="metroMayor"?"直轄市長為臺北市、高雄市分別選舉，無單一「全臺候選人得票率」。":"縣市長為各縣市分別選舉，無單一「全臺候選人得票率」。")+'<br>請選擇縣市或鄉鎮市區查看詳細結果。</div>';
     return;
   }
@@ -1739,29 +1743,28 @@ function renderHistory(){
   const panel=$("historyPanel");
   if(!panel)return;
   const overview=$("historyCardOverview"),metric=$("historyCardMetric"),share=$("historyCardShare"),mayorSeats=$("historyCardMayorSeats"),mayorChart=$("mayorAnalysisChart"),cards=$("historyCards");
+
+  // Reset every module first so a previous election type can never leak into the new view.
+  panel.classList.remove("mayor-layout");
+  overview.style.display="";
+  metric.style.display="";
+  share.style.display="";
+  mayorSeats.style.display="none";
+  mayorChart.style.display="none";
+  cards.style.display="";
+
   if(activeKey!=="president"){
     panel.classList.add("mayor-layout");
-    overview.style.gridColumn="";
     metric.style.display="none";
     share.style.display="none";
-    mayorSeats.style.display="block";
-    mayorSeats.style.gridColumn="";
-    mayorSeats.style.gridRow="";
-    cards.style.display="none";
+    mayorSeats.style.display="flex";
     mayorChart.style.display="block";
+    cards.style.display="none";
     renderMayorHistory();
     renderMayorSeatHistory();
     return;
   }
-  panel.classList.remove("mayor-layout");
-  overview.style.gridColumn="";
-  metric.style.display="";
-  share.style.display="";
-  mayorSeats.style.display="none";
-  mayorSeats.style.gridColumn="";
-  mayorSeats.style.gridRow="";
-  cards.style.display="";
-  mayorChart.style.display="none";
+
   panel.querySelector(".history-title").textContent="歷年總統當選人統計";
   panel.querySelector(".history-sub").textContent="1996–2024 全國總統副總統選舉｜當選人與得票率";
   const history=electionData?.presidents||{};
@@ -1773,49 +1776,39 @@ function renderHistory(){
     const meta=stats[y]||stats[String(y)]||{};
     const lead=(meta?.candidates?.[0]||s?.candidates?.[0]);
     const color=partyColor(lead?.party);
-    return '<div class="history-year-card"><div class="history-year">'+y+'</div><div class="history-winner" style="color:'+color+'">'+(lead?.name||"—")+'</div><div class="history-meta" style="color:'+color+'">'+(lead?.party||"—")+'　'+(lead?.share?.toFixed(2)||"—")+'%</div><div class="history-stat">投票率 '+(meta?.turnout?.toFixed(2)||"—")+'%</div><div class="history-stat">有效票 '+fmt(meta?.validVotes||0)+'</div></div>';
+    return '<div class="history-year-card"><div class="history-year">'+y+'</div>'+
+      '<div class="history-winner" style="color:'+color+'">'+(lead?.name||"—")+'</div>'+
+      '<div class="history-meta" style="color:'+color+'">'+(lead?.party||"—")+'</div>'+
+      '<div class="history-stat">得票率 '+(lead?.share!=null?Number(lead.share).toFixed(2):"—")+'%</div>'+
+      '<div class="history-stat">投票率 '+(meta?.turnout!=null?Number(meta.turnout).toFixed(2):"—")+'%</div>'+
+      '<div class="history-stat">有效票 '+fmt(meta?.validVotes||s?.national?.totalVotes||0)+'</div></div>';
   }).join("");
+
+  const turnoutRows=years.map(y=>({year:y,turnout:Number((stats[y]||stats[String(y)]||{}).turnout||0)}));
   if(!historyTurnoutChartInstance)historyTurnoutChartInstance=echarts.init($("historyTurnoutChart"),"dark");
   historyTurnoutChartInstance.setOption({
-    animationDuration:450,grid:{left:34,right:12,top:12,bottom:26},
-    xAxis:{type:"category",data:years.map(String),axisLabel:{color:"#8190a4",fontSize:10}},
-    yAxis:{type:"value",min:64,max:85,axisLabel:{color:"#8190a4",fontSize:9,formatter:v=>v+"%"},splitLine:{lineStyle:{color:"#263242"}}},
-    tooltip:{trigger:"axis",backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},valueFormatter:v=>Number(v).toFixed(2)+"%"},
-    series:[{type:"line",smooth:true,symbol:"circle",symbolSize:7,data:years.map(y=>(stats[y]||stats[String(y)])?.turnout||null),lineStyle:{width:2,color:"#67d5ff"},itemStyle:{color:"#67d5ff"},areaStyle:{opacity:.08}}]
+    animationDuration:450,grid:{left:40,right:16,top:28,bottom:28},
+    xAxis:{type:"category",data:turnoutRows.map(x=>x.year),axisLabel:{color:"#8190a4",fontSize:9}},
+    yAxis:{type:"value",min:0,max:100,axisLabel:{color:"#8190a4",fontSize:9,formatter:v=>v+"%"},splitLine:{lineStyle:{color:"#263242"}}},
+    tooltip:{trigger:"axis",backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},formatter:p=>p[0].axisValue+"<br><b>投票率 "+Number(p[0].value).toFixed(2)+"%</b>"},
+    series:[{type:"line",smooth:true,data:turnoutRows.map(x=>x.turnout),symbolSize:6,lineStyle:{width:2,color:"#4ec9ff"},itemStyle:{color:"#4ec9ff"}}]
   },true);
-  if(!historyShareChartInstance)historyShareChartInstance=echarts.init($("historyShareChart"),"dark");
-  const parties=["民主進步黨","中國國民黨","台灣民眾黨","親民黨"];
-  historyShareChartInstance.setOption({
-    animationDuration:450,grid:{left:34,right:20,top:12,bottom:26},
-    xAxis:{type:"category",data:years.map(String),axisLabel:{color:"#8190a4",fontSize:10}},
-    yAxis:{type:"value",min:0,max:65,axisLabel:{color:"#8190a4",fontSize:9,formatter:v=>v+"%"},splitLine:{lineStyle:{color:"#263242"}}},
-    tooltip:{trigger:"axis",backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},valueFormatter:v=>Number(v).toFixed(2)+"%"},
-    legend:{top:0,right:0,left:"auto",textStyle:{color:"#9aa8ba",fontSize:9},itemWidth:10,itemHeight:7},
-    series:parties.map(p=>({name:p,type:"line",smooth:true,symbol:"circle",symbolSize:5,data:years.map(y=>{const x=(stats[y]||stats[String(y)])?.candidates?.find(c=>c.party===p) || history[y]?.candidates?.find(c=>c.party===p);return x?x.share:null}),connectNulls:false,lineStyle:{width:2,color:partyColor(p)},itemStyle:{color:partyColor(p)}}))
-  },true);
-}
-function partyShares(bucket){
-  const out={};
-  for(const x of bucket?.candidates||[]){
-    const p=x.party||"無黨籍及未經政黨推薦";
-    out[p]=(out[p]||0)+Number(x.votes||0);
-  }
-  const total=Object.values(out).reduce((a,b)=>a+b,0)||1;
-  return out;
-}
-function normalizeCountyLabel(name){
-  return String(name||"").trim()
-    .replaceAll("台","臺")
-    .replace("臺北縣","新北市")
-    .replace("桃園縣","桃園市")
-    .replace("臺中縣","臺中市")
-    .replace("臺南縣","臺南市")
-    .replace("高雄縣","高雄市");
-}
-function sameCountyLabel(a,b){
-  return normalizeCountyLabel(a)===normalizeCountyLabel(b);
-}
 
+  const shareRows=years.map(y=>{
+    const ds=history[y]||{};
+    const meta=stats[y]||stats[String(y)]||{};
+    const lead=(meta?.candidates?.[0]||ds?.candidates?.[0]);
+    return {year:y,share:Number(lead?.share||0),name:lead?.name||"—",party:lead?.party||"其他"};
+  });
+  if(!historyShareChartInstance)historyShareChartInstance=echarts.init($("historyShareChart"),"dark");
+  historyShareChartInstance.setOption({
+    animationDuration:450,grid:{left:42,right:16,top:28,bottom:28},
+    xAxis:{type:"category",data:shareRows.map(x=>x.year),axisLabel:{color:"#8190a4",fontSize:9}},
+    yAxis:{type:"value",min:0,max:100,axisLabel:{color:"#8190a4",fontSize:9,formatter:v=>v+"%"},splitLine:{lineStyle:{color:"#263242"}}},
+    tooltip:{trigger:"axis",backgroundColor:"#0b111a",borderColor:"#3a485b",textStyle:{color:"#e7edf5",fontSize:11},formatter:p=>{const x=shareRows[p[0]?.dataIndex];return x.year+"<br><b>"+x.name+"　"+x.share.toFixed(2)+"%</b>"}},
+    series:[{type:"line",smooth:true,data:shareRows.map(x=>({value:x.share,itemStyle:{color:partyColor(x.party)}})),symbolSize:6,lineStyle:{width:2,color:"#67d5ff"}}]
+  },true);
+}
 function renderMayorHistory(){
   const buckets={};
   Object.values(activeDataset?.towns||{}).forEach(row=>{
@@ -2155,6 +2148,11 @@ function setElectionType(){
   refreshCustomSelect("electionType");
   refreshCustomSelect("year");
   activeDataset=prepareDataset(datasetFor(activeKey,$("year").value));
+  if(!activeDataset){
+    console.error("找不到選取選舉類型的資料",activeKey,$("year").value);
+    $("status").textContent="目前沒有可用的 "+$("electionType").selectedOptions[0].textContent+" 資料";
+    return;
+  }
   $("town").disabled=false;$("town").title="";
   selectedCode=null;selectedFeatures=[];clearSelection();
   partyTownLookup=buildPartyTownLookup();
