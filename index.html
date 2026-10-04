@@ -43,7 +43,7 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
 .legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;color:var(--muted);font-size:11px}
 .legend-item{display:flex;align-items:center;gap:5px}.dot{width:8px;height:8px;border-radius:50%}
 .source{margin-top:20px;color:var(--muted);font-size:10px;line-height:1.6}.chart-box{height:190px;width:100%}.mini-chart{height:165px;width:100%}.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.kpi-card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px}.kpi-label{font-size:9px;color:var(--muted)}.kpi-value{font-size:16px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}.module-hidden{display:none}.pie-wrap{display:block;height:210px}.pie-wrap #voteShareChart{height:210px}.pie-legend{display:none}
-.hint{margin-top:20px;color:var(--muted);font-size:12px;line-height:1.7}.history-panel{grid-column:1 / -1;grid-row:2;background:var(--panel);border-top:1px solid var(--line);padding:16px 22px;display:grid;grid-template-columns:1.05fr 1fr 1.7fr;gap:16px;min-height:0;overflow-y:auto;align-items:start}.mayor-seat-card{display:none}.mayor-seat-chart{height:260px;width:100%}.history-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}.history-title{font-size:14px;font-weight:700}.history-sub{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5}.history-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0;overflow:visible}.history-chart{height:220px;width:100%}.mayor-only{display:none;height:520px}.history-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.history-year-card{border:1px solid var(--line);border-radius:8px;padding:8px;background:#0d151f;min-width:0}.history-year{font-size:10px;color:var(--muted)}.history-winner{font-size:16px;font-weight:750;margin-top:4px}.history-meta{font-size:11px;color:#9aa8ba;margin-top:3px}.history-stat{font-size:11px;color:var(--muted);margin-top:5px}.right-summary{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0 4px}.right-summary .kpi-card{padding:9px}.data-level{font-size:10px;color:var(--muted);margin:7px 0 12px}.section-title{font-size:11px;color:var(--muted);margin:18px 0 8px}
+.hint{margin-top:20px;color:var(--muted);font-size:12px;line-height:1.7}.history-panel{grid-column:1 / -1;grid-row:2;background:var(--panel);border-top:1px solid var(--line);padding:12px 18px;display:grid;grid-template-columns:1.05fr 1fr 1.7fr;gap:12px;min-height:0;overflow:hidden;align-items:start}.history-panel.mayor-layout{grid-template-columns:1fr 1fr;gap:12px}.mayor-seat-card{display:none}.mayor-seat-chart{height:205px;width:100%}.history-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}.history-title{font-size:14px;font-weight:700}.history-sub{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5}.history-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0;overflow:visible}.history-chart{height:220px;width:100%}.mayor-only{display:none;height:205px}.history-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.history-year-card{border:1px solid var(--line);border-radius:8px;padding:8px;background:#0d151f;min-width:0}.history-year{font-size:10px;color:var(--muted)}.history-winner{font-size:16px;font-weight:750;margin-top:4px}.history-meta{font-size:11px;color:#9aa8ba;margin-top:3px}.history-stat{font-size:11px;color:var(--muted);margin-top:5px}.winner-card{margin:10px 0 12px;padding:11px 12px;background:#111a26;border:1px solid #344152;border-radius:10px}.winner-label{font-size:9px;color:var(--muted);letter-spacing:.04em}.winner-name{font-size:20px;font-weight:750;margin-top:3px;line-height:1.2}.winner-party{font-size:10px;color:#aab6c6;margin-top:4px}.winner-share{font-size:10px;color:var(--muted);margin-top:6px}.winner-note{font-size:10px;color:var(--muted);line-height:1.5}.right-summary{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0 4px}.right-summary .kpi-card{padding:9px}.data-level{font-size:10px;color:var(--muted);margin:7px 0 12px}.section-title{font-size:11px;color:var(--muted);margin:18px 0 8px}
 .badge{display:inline-block;padding:3px 7px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:10px;margin-bottom:12px}
 .empty{color:var(--muted);font-size:12px;line-height:1.7;padding:12px 0}
 .tooltip{position:fixed;z-index:20;pointer-events:none;min-width:230px;background:#0b111aee;border:1px solid #3a485b;border-radius:9px;padding:11px 12px;box-shadow:0 12px 35px #0008;backdrop-filter:blur(8px);display:none}.tooltip-title{font-size:14px;font-weight:650;margin-bottom:8px}.tooltip-row{display:grid;grid-template-columns:1fr auto;gap:12px;font-size:11px;padding:4px 0}.tooltip-party{color:var(--muted)}.tooltip-share{font-variant-numeric:tabular-nums;font-weight:650}
@@ -85,6 +85,8 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
   <div class="title">目前選取</div>
   <div class="place" id="place">全臺</div>
   <div class="badge" id="dataBadge">2024 總統副總統</div>
+
+  <div class="winner-card" id="winnerCard"></div>
 
   <div class="metric"><span>有效票</span><span id="validVotes">—</span></div>
   <div class="data-level" id="dataLevel">資料層級：全臺</div>
@@ -526,7 +528,8 @@ function renderHistory(){
   if(!panel)return;
   const overview=$("historyCardOverview"),metric=$("historyCardMetric"),share=$("historyCardShare"),mayorSeats=$("historyCardMayorSeats"),mayorChart=$("mayorAnalysisChart"),cards=$("historyCards");
   if(activeKey!=="president"){
-    overview.style.gridColumn="1 / -1";
+    panel.classList.add("mayor-layout");
+    overview.style.gridColumn="";
     metric.style.display="none";
     share.style.display="none";
     mayorSeats.style.display="block";
@@ -537,6 +540,7 @@ function renderHistory(){
     renderMayorSeatHistory();
     return;
   }
+  panel.classList.remove("mayor-layout");
   overview.style.gridColumn="";
   metric.style.display="";
   share.style.display="";
@@ -712,11 +716,73 @@ function renderMayorSeatHistory(){
   },true);
 }
 
+function getWinnerForCurrentView(name){
+  if(activeKey==="president"){
+    const rows=(activeDataset?.national?.candidates||[]).slice().sort((a,b)=>Number(b.votes||0)-Number(a.votes||0));
+    const winner=rows[0];
+    return winner ? {
+      label:"全國當選",
+      name:winner.name||"—",
+      party:winner.party||"—",
+      share:Number(winner.share||0),
+      votes:Number(winner.votes||0),
+      note:"總統副總統選舉以全國候選組得票數最高者當選。"
+    } : null;
+  }
+
+  if(name==="全臺"){
+    return {
+      label:"縣市長選舉",
+      name:"各縣市分別選出",
+      party:"",
+      share:null,
+      votes:null,
+      note:"縣市長並非全臺單一席次；請選擇縣市查看該縣市當選人。"
+    };
+  }
+
+  const countyFeature=selectedFeatures?.[0];
+  const countyName=countyFeature?.properties?.COUNTYNAME || name.split("・")[0];
+  const fs=towns.filter(f=>f.properties.COUNTYNAME===countyName);
+  const countyData=activeDataset?.counties?.[countyName] || aggregate(fs);
+  const rows=(countyData?.candidates||[]).slice().sort((a,b)=>Number(b.votes||0)-Number(a.votes||0));
+  const winner=rows[0];
+  if(!winner)return null;
+  const total=Number(countyData?.totalVotes||0);
+  return {
+    label:countyName+" 當選",
+    name:winner.name||"—",
+    party:winner.party||"—",
+    share:total ? Number(winner.votes||0)/total*100 : Number(winner.share||0),
+    votes:Number(winner.votes||0),
+    note:"顯示該縣市全區合計得票最高的候選人。"
+  };
+}
+
+function renderWinner(name){
+  const el=$("winnerCard");
+  if(!el)return;
+  const winner=getWinnerForCurrentView(name);
+  if(!winner){
+    el.innerHTML='<div class="winner-label">最終結果</div><div class="winner-note">目前沒有可判定的當選資料。</div>';
+    return;
+  }
+  if(winner.name==="各縣市分別選出"){
+    el.innerHTML='<div class="winner-label">'+winner.label+'</div><div class="winner-name" style="font-size:16px">各縣市分別選出</div><div class="winner-note">'+winner.note+'</div>';
+    return;
+  }
+  el.innerHTML='<div class="winner-label">'+winner.label+'</div>'+
+    '<div class="winner-name">'+winner.name+'</div>'+
+    '<div class="winner-party">'+winner.party+'</div>'+
+    '<div class="winner-share">'+fmt(winner.votes)+' 票　'+winner.share.toFixed(2)+'%</div>';
+}
+
 function updatePanel(name,data){
   $("place").textContent=name;
   $("validVotes").textContent=(activeKey==="mayor" && name==="全臺")?"—":(data?fmt(data.totalVotes):"—");
   $("dataBadge").textContent=$("year").value+" "+$("electionType").selectedOptions[0].textContent;
   $("dataLevel").textContent="資料層級："+(name==="全臺"?"全臺":(activeKey==="mayor"?"縣市":"鄉鎮市區"));
+  renderWinner(name);
   const panelData=data||activeDataset?.national;
   renderRegionKpis(panelData);
   renderPie(panelData);
@@ -825,6 +891,7 @@ window.addEventListener("resize",()=>{
   if(historyTurnoutChartInstance)historyTurnoutChartInstance.resize();
   if(historyShareChartInstance)historyShareChartInstance.resize();
   if(mayorAnalysisChartInstance)mayorAnalysisChartInstance.resize();
+  if(mayorSeatChartInstance)mayorSeatChartInstance.resize();
 });
 
 Promise.all([
