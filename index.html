@@ -19,7 +19,7 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
 .label{font-size:11px;color:var(--muted);margin:18px 0 7px}
 .select{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px}
 .map{position:relative;min-width:0;min-height:0}.mapbar{position:absolute;z-index:3;left:20px;top:18px;background:#0d131dcc;border:1px solid var(--line);border-radius:9px;padding:8px 12px;color:var(--muted);font-size:12px}
-.map svg{width:100%;height:100%;display:block}.map-legend{position:absolute;left:20px;bottom:18px;z-index:3;width:230px;background:#0d131de8;border:1px solid var(--line);border-radius:10px;padding:12px 13px;backdrop-filter:blur(8px);box-shadow:0 10px 25px #0005}.map-legend-title{font-size:11px;font-weight:650;margin-bottom:9px}.map-legend-sub{font-size:10px;color:var(--muted);margin-bottom:8px}.opacity-ramp{height:9px;border-radius:99px;background:linear-gradient(to right,rgba(103,213,255,.24),rgba(103,213,255,1));border:1px solid #3b4655}.opacity-ticks{display:flex;justify-content:space-between;color:var(--muted);font-size:9px;margin-top:4px}.party-ramp{height:7px;border-radius:99px;border:1px solid #3b4655}.party-ramp.dpp{background:linear-gradient(to right,rgba(27,158,63,.24),rgba(27,158,63,1))}.party-ramp.kmt{background:linear-gradient(to right,rgba(47,111,214,.24),rgba(47,111,214,1))}.party-ramp.tpp{background:linear-gradient(to right,rgba(25,167,206,.24),rgba(25,167,206,1))}.ramp-row{display:grid;grid-template-columns:66px 1fr;align-items:center;gap:8px;margin:5px 0}.ramp-name{font-size:9px;color:var(--muted)}.map-legend-note{font-size:9px;color:var(--muted);margin-top:9px;line-height:1.45}
+.map svg{width:100%;height:100%;display:block}.map-legend{position:absolute;left:20px;bottom:18px;z-index:3;width:230px;background:#0d131de8;border:1px solid var(--line);border-radius:10px;padding:12px 13px;backdrop-filter:blur(8px);box-shadow:0 10px 25px #0005}.map-legend-title{font-size:11px;font-weight:650;margin-bottom:9px}.map-legend-sub{font-size:10px;color:var(--muted);margin-bottom:8px}.opacity-ramp{height:9px;border-radius:99px;background:linear-gradient(to right,rgba(103,213,255,.24),rgba(103,213,255,1));border:1px solid #3b4655}.opacity-ticks{display:flex;justify-content:space-between;color:var(--muted);font-size:9px;margin-top:4px}.party-ramp{height:7px;border-radius:99px;border:1px solid #3b4655}.party-ramp.dpp{background:linear-gradient(to right,#76c893,#126b2d)}.party-ramp.kmt{background:linear-gradient(to right,#7fa9ef,#1f4f9f)}.party-ramp.tpp{background:linear-gradient(to right,#79d9ed,#087f9f)}.ramp-row{display:grid;grid-template-columns:66px 1fr;align-items:center;gap:8px;margin:5px 0}.ramp-name{font-size:9px;color:var(--muted)}.map-legend-note{font-size:9px;color:var(--muted);margin-top:9px;line-height:1.45}
 .town{fill:#121b27;stroke:#344152;stroke-width:.42;cursor:pointer;transition:fill .15s}
 .town:hover{fill:#24364a}
 .town.selected{stroke:#67d5ff !important;stroke-width:1.8 !important;fill-opacity:.95;filter:drop-shadow(0 0 2px rgba(103,213,255,.75))}
@@ -446,17 +446,29 @@ function aggregateHistory(features){
   return {totalVotes:total,candidates:Object.values(rows).map(x=>({...x,share:total?x.votes/total*100:0}))};
 }
 
+function mapPartyShade(party,share){
+  const t=Math.max(0,Math.min(1,Number(share||0)/100));
+  const palettes={
+    "民主進步黨":["#76c893","#126b2d"],
+    "中國國民黨":["#7fa9ef","#1f4f9f"],
+    "台灣民眾黨":["#79d9ed","#087f9f"],
+    "其他":["#9aa8b8","#4b5868"]
+  };
+  const key=Object.prototype.hasOwnProperty.call(palettes,party)?party:"其他";
+  return d3.interpolateRgb(palettes[key][0],palettes[key][1])(t);
+}
 function applyElectionColors(){
   if(!activeDataset)return;
   svg.selectAll(".town").each(function(d){
-    const row=activeKey==="mayor"
-      ? townResult(d.properties.TOWNCODE)
-      : townResult(d.properties.TOWNCODE);
+    const row=townResult(d.properties.TOWNCODE);
     const leader=row?.candidates?.[0];
+    const share=leader?.share!=null
+      ? Number(leader.share)
+      : (leader&&row?.totalVotes ? Number(leader.votes||0)/Number(row.totalVotes)*100 : 0);
     d3.select(this)
       .classed("result-enabled",!!row)
-      .style("fill",leader?partyColor(leader.party):"#121b27")
-      .style("fill-opacity",leader?(.24+Math.min(leader.share/100,.76)):.72);
+      .style("fill",leader?mapPartyShade(leader.party,share):"#121b27")
+      .style("fill-opacity",leader?1:.72);
   });
 }
 
