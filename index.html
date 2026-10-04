@@ -19,7 +19,7 @@ h1{font-size:20px;letter-spacing:.08em;margin:0 0 5px}.sub{color:var(--muted);fo
 .label{font-size:11px;color:var(--muted);margin:18px 0 7px}
 .select{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px}
 .map{position:relative;min-width:0;min-height:0}.mapbar{position:absolute;z-index:3;left:20px;top:18px;background:#0d131dcc;border:1px solid var(--line);border-radius:9px;padding:8px 12px;color:var(--muted);font-size:12px}
-.map svg{width:100%;height:100%;display:block}.map-legend{position:absolute;left:20px;bottom:18px;z-index:3;width:230px;background:#0d131de8;border:1px solid var(--line);border-radius:10px;padding:12px 13px;backdrop-filter:blur(8px);box-shadow:0 10px 25px #0005}.map-legend-title{font-size:11px;font-weight:650;margin-bottom:9px}.map-legend-sub{font-size:10px;color:var(--muted);margin-bottom:8px}.opacity-ramp{height:9px;border-radius:99px;background:linear-gradient(to right,rgba(103,213,255,.24),rgba(103,213,255,1));border:1px solid #3b4655}.opacity-ticks{display:flex;justify-content:space-between;color:var(--muted);font-size:9px;margin-top:4px}.party-ramp{height:7px;border-radius:99px;border:1px solid #3b4655}.party-ramp.dpp{background:linear-gradient(to right,#8fd3a5,#0b5424)}.party-ramp.kmt{background:linear-gradient(to right,#9bbcf4,#173f8a)}.party-ramp.tpp{background:linear-gradient(to right,#8ee1ee,#056b88)}.ramp-row{display:grid;grid-template-columns:66px 1fr;align-items:center;gap:8px;margin:5px 0}.ramp-name{font-size:9px;color:var(--muted)}.map-legend-note{font-size:9px;color:var(--muted);margin-top:9px;line-height:1.45}
+.map svg{width:100%;height:100%;display:block}.map-legend{position:absolute;left:20px;bottom:18px;z-index:3;width:230px;background:#0d131de8;border:1px solid var(--line);border-radius:10px;padding:12px 13px;backdrop-filter:blur(8px);box-shadow:0 10px 25px #0005}.map-legend-title{font-size:11px;font-weight:650;margin-bottom:9px}.map-legend-sub{font-size:10px;color:var(--muted);margin-bottom:8px}.opacity-ramp{height:9px;border-radius:99px;background:linear-gradient(to right,rgba(103,213,255,.24),rgba(103,213,255,1));border:1px solid #3b4655}.opacity-ticks{display:flex;justify-content:space-between;color:var(--muted);font-size:9px;margin-top:4px}.party-ramp{height:7px;border-radius:99px;border:1px solid #3b4655}.party-ramp.dpp{background:linear-gradient(to right,#5fa878,#073b1a)}.party-ramp.kmt{background:linear-gradient(to right,#668fc9,#102f68)}.party-ramp.tpp{background:linear-gradient(to right,#5bb8ca,#04556d)}.ramp-row{display:grid;grid-template-columns:66px 1fr;align-items:center;gap:8px;margin:5px 0}.ramp-name{font-size:9px;color:var(--muted)}.map-legend-note{font-size:9px;color:var(--muted);margin-top:9px;line-height:1.45}
 .town{fill:#121b27;stroke:#344152;stroke-width:.42;cursor:pointer;transition:fill .15s}
 .town:hover{fill:#24364a}
 .town.selected{stroke:#67d5ff !important;stroke-width:1.8 !important;fill-opacity:.95;filter:drop-shadow(0 0 2px rgba(103,213,255,.75))}
@@ -450,10 +450,10 @@ function mapPartyShade(party,share){
   // 得票率越高越深；同時維持較高飽和度，讓高低票差距更容易辨識。
   const t=Math.max(0,Math.min(1,Number(share||0)/100));
   const palettes={
-    "民主進步黨":["#8fd3a5","#0b5424"],
-    "中國國民黨":["#9bbcf4","#173f8a"],
-    "台灣民眾黨":["#8ee1ee","#056b88"],
-    "其他":["#a9b4c0","#3f4b59"]
+    "民主進步黨":["#5fa878","#073b1a"],
+    "中國國民黨":["#668fc9","#102f68"],
+    "台灣民眾黨":["#5bb8ca","#04556d"],
+    "其他":["#7d8996","#303a45"]
   };
   const key=Object.prototype.hasOwnProperty.call(palettes,party)?party:"其他";
   // 低票率保持淺色、高票率逐步壓深，並避免中間值過度灰淡。
