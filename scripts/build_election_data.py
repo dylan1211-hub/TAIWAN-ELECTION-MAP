@@ -771,6 +771,26 @@ def validate_dataset(name, ds):
         if not 99.0 <= share_sum <= 101.0:
             raise ValueError(f"{name}/{key}: candidate shares sum to {share_sum:.2f}%")
 
+def validate_national_dataset(name, ds):
+    if not isinstance(ds, dict):
+        raise ValueError(f"{name}: dataset is not an object")
+    national = ds.get("national") or {}
+    candidates = national.get("candidates") or []
+    if not candidates:
+        raise ValueError(f"{name}: national candidates are missing")
+    for idx, row in enumerate(candidates):
+        votes = float(row.get("votes", 0) or 0)
+        share = float(row.get("share", 0) or 0)
+        if votes < 0:
+            raise ValueError(f"{name}: negative national votes at candidate {idx}")
+        if not 0 <= share <= 100:
+            raise ValueError(f"{name}: invalid national share {share}")
+    national_total = float(national.get("totalVotes", 0) or 0)
+    national_sum = sum(float(x.get("votes", 0) or 0) for x in candidates)
+    if national_total and abs(national_sum - national_total) > 0.5:
+        raise ValueError(f"{name}: national vote total mismatch ({national_sum} != {national_total})")
+
+
 def validate_payload(payload):
     for kind, source_key in (
         ("president", "presidents"),
@@ -786,10 +806,14 @@ def validate_payload(payload):
             if ds is None:
                 raise ValueError(f"{kind}: missing dataset for {year}")
             validate_dataset(f"{kind}/{year}", ds)
+    # These legacy/current dashboard datasets may intentionally omit town-level
+    # results because their map data is stored in the historical year collections.
     for name in ("president", "president2020", "mayor", "mayor2018"):
         ds = payload.get(name)
         if ds:
-            validate_dataset(name, ds)
+            validate_national_dataset(name, ds)
+            if ds.get("towns"):
+                validate_dataset(f"{name}/towns", ds)
 import argparse
 
 parser = argparse.ArgumentParser()
