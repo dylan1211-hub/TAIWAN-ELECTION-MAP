@@ -618,6 +618,18 @@ def aggregate_bulk_election(source_dir, town_map, kind, year):
     print(f"Aligned {kind} {year}: towns={len(output)}, unmatched_places={dropped}")
     if unmatched_names:
         print("  Unmatched:", ", ".join(unmatched_names[:200]))
+    # 統一歷史資料格式：前端與 2022 資料一律使用 candidates 陣列。
+    for row in output.values():
+        candidates = sorted(row["candidates"].values(), key=lambda x: -x["votes"])
+        total_votes = row["totalVotes"]
+        row["candidates"] = [
+            {
+                **x,
+                "share": round(x["votes"] / total_votes * 100, 2) if total_votes else 0
+            }
+            for x in candidates
+        ]
+
     return {"year":year, "election":HISTORICAL_ELECTION_NAMES.get(year) if kind=="president" else MAYOR_ELECTION_NAMES.get(year), "national":{"totalVotes":total,"candidates":national_rows}, "towns":output}
 
 def discover_bulk_sources(root, keyword=""):
