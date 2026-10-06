@@ -1202,7 +1202,7 @@ $("brandHome").onclick=()=>window.location.reload();
 let g,zoom,towns=[],projection,path,selectedCode=null,electionData=null,voteShareChart=null,partyChartInstance=null,trendChartInstance=null,historyTurnoutChartInstance=null,historyShareChartInstance=null,mayorAnalysisChartInstance=null,mayorSeatChartInstance=null;
 
 const MAP_URL="https://cdn.jsdelivr.net/npm/taiwan-atlas@2021.9.20/towns-10t.json";
-const DATA_URL="data/elections.json?v=20261004-2";
+const DATA_URL="data/elections.json?v=20261006-1";
 let activeKey="president",activeDataset=null,partyTownLookup={},partyNameLookup={},history2020Lookup={},mayor2018Lookup={},mayorNameLookup={},selectedFeatures=[];
 
 const PARTY_COLOR={
@@ -1833,16 +1833,27 @@ function renderMayorHistory(){
   const rows=Object.entries(buckets).map(([county,s])=>{
     s.candidates=Object.entries(s.candidates).map(([name,v])=>({name,party:v.party,votes:v.votes}));
     const total=s.totalVotes||1;
-    const shares=partyShares(s);
+    // 直接依候選人所屬政黨彙總票數，避免依賴不存在的 partyShares()。
+    const partyVotes={
+      "民主進步黨":0,
+      "中國國民黨":0,
+      "台灣民眾黨":0
+    };
+    let knownVotes=0;
+    for(const c of s.candidates){
+      const party=String(c.party||"").trim();
+      const votes=Number(c.votes||0);
+      if(Object.prototype.hasOwnProperty.call(partyVotes,party)){
+        partyVotes[party]+=votes;
+        knownVotes+=votes;
+      }
+    }
     return {
       county,
-      dpp:(shares["民主進步黨"]||0)/total*100,
-      kmt:(shares["中國國民黨"]||0)/total*100,
-      tpp:(shares["台灣民眾黨"]||0)/total*100,
-      other:Math.max(0,100-
-        (shares["民主進步黨"]||0)/total*100-
-        (shares["中國國民黨"]||0)/total*100-
-        (shares["台灣民眾黨"]||0)/total*100)
+      dpp:partyVotes["民主進步黨"]/total*100,
+      kmt:partyVotes["中國國民黨"]/total*100,
+      tpp:partyVotes["台灣民眾黨"]/total*100,
+      other:Math.max(0,100-knownVotes/total*100)
     };
   }).sort((a,b)=>a.county.localeCompare(b.county,"zh-Hant"));
 
